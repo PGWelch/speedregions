@@ -77,12 +77,12 @@ public class QueryProcessor {
 
 
 		// Check for leaf node
-		if (node.getRegionId() != null) {
+		if (node.getRegionType() != null) {
 			// If we got to this point we must have already checked for the node being a higher
 			// (numerically lower) priority than already found, so take the node
 			// is the node higher priority than the current result?
 			obj.currentBestPriority = node.getAssignedPriority();
-			obj.currentBestId = node.getRegionId();
+			obj.currentBestId = node.getRegionType();
 
 		} else {
 			// Children are sorted by priority so we do highest (numerically lowest) first.

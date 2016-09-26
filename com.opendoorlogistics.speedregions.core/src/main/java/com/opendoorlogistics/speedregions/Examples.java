@@ -6,9 +6,9 @@ import java.util.Random;
 
 import org.geojson.Feature;
 
-import com.opendoorlogistics.speedregions.beans.RegionLookupBean;
+import com.opendoorlogistics.speedregions.beans.CompiledSpeedRegions;
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
-import com.opendoorlogistics.speedregions.beans.SpeedRules;
+import com.opendoorlogistics.speedregions.beans.SpeedRulesFile;
 import com.opendoorlogistics.speedregions.processor.GeomConversion;
 import com.opendoorlogistics.speedregions.processor.RegionProcessorUtils;
 import com.vividsolutions.jts.geom.Coordinate;
@@ -20,23 +20,23 @@ public class Examples {
 
 	public static void main(String[] args) throws Exception {
 
-		SpeedRules gb = RegionProcessorUtils.fromJSON(new File("examples\\GB.json"), SpeedRules.class);
-		RegionLookupBean rlb = SpeedRegionBeanBuilder.buildBeanFromSpeedRulesObjs(Arrays.asList(gb), 250);
+		SpeedRulesFile gb = RegionProcessorUtils.fromJSON(new File("examples\\GB.json"), SpeedRulesFile.class);
+		CompiledSpeedRegions rlb = SpeedRegionCompiler.buildBeanFromSpeedRulesObjs(Arrays.asList(gb), 250);
 		System.out.println(GeomConversion.toODLTable(rlb.getQuadtree(), true));
 
 	}
 
 	public static void runMaltaExample() {
 		// build single quadtree
-		SpeedRules rules = createMaltaExample(0.75);
+		SpeedRulesFile rules = createMaltaExample(0.75);
 
-		RegionLookupBean rlb = SpeedRegionBeanBuilder.buildBeanFromSpeedRulesObjs(Arrays.asList(rules), 200);
+		CompiledSpeedRegions rlb = SpeedRegionCompiler.buildBeanFromSpeedRulesObjs(Arrays.asList(rules), 200);
 
 		System.out.println();
 		System.out.println(GeomConversion.toODLTable(rlb.getQuadtree(), true));
 
 		// build some random points
-		SpeedRegionLookup lookup = SpeedRegionLookupBuilder.convertFromBean(rlb);
+		SpeedRegionLookup lookup = SpeedRegionLookupBuilder.convertFromCompiled(rlb);
 		Envelope envelope = GeomConversion.toJTS(CENTRAL_MALTA_POLYGON).getEnvelopeInternal();
 		Random random = new Random(123);
 		int npoints = 100;
@@ -44,8 +44,8 @@ public class Examples {
 		for (int i = 0; i < npoints; i++) {
 			Coordinate coordinate = new Coordinate(random.nextDouble() * (envelope.getMaxX() - envelope.getMinX()) + envelope.getMinX(),
 					random.nextDouble() * (envelope.getMaxY() - envelope.getMinY()) + envelope.getMinY());
-			Point point = RegionProcessorUtils.newGeomFactory().createPoint(coordinate);
-			String regionId = lookup.findRegionId(point);
+			Point point = GeomConversion.newGeomFactory().createPoint(coordinate);
+			String regionId = lookup.findRegionType(point);
 			builder.append(Double.toString(coordinate.y));
 			builder.append("\t");
 			builder.append(Double.toString(coordinate.x));
@@ -57,19 +57,19 @@ public class Examples {
 		System.out.println(builder.toString());
 	}
 
-	public static SpeedRules createMaltaExample(double speedMultiplier) {
+	public static SpeedRulesFile createMaltaExample(double speedMultiplier) {
 		Feature feature = new Feature();
-		feature.setProperty(SpeedRegionConsts.REGION_ID_KEY, "valleta");
+		feature.setProperty(SpeedRegionConsts.REGION_TYPE_KEY, "valleta");
 		org.geojson.Polygon geoJSONPolygon = GeomConversion.toGeoJSONPolygon(CENTRAL_MALTA_POLYGON);
 		feature.setGeometry(geoJSONPolygon);
 
-		SpeedRules rules = new SpeedRules();
-		rules.setCountryCode("mt");
-		rules.getGeojsonFeatureCollection().add(feature);
+		SpeedRulesFile rules = new SpeedRulesFile();
+		//rules.setCountryCode("mt");
+		rules.getGeoJson().add(feature);
 
 		SpeedRule rule = new SpeedRule();
-		rule.getFlagEncoders().add("car");
-		rule.getRegionIds().add("valleta");
+		rule.getMatchRule().getFlagEncoders().add("car");
+		rule.getMatchRule().getRegionTypes().add("valleta");
 		rule.setMultiplier(speedMultiplier);
 		rules.getRules().add(rule);
 		return rules;

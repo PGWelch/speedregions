@@ -13,12 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.opendoorlogistics.speedregions.beans;
 
-package com.opendoorlogistics.speedregions;
+import java.util.ArrayList;
+import java.util.List;
 
+public class MatchRule {
+	private List<String> flagEncoders = new ArrayList<String>();
+	private List<String> regionTypes = new ArrayList<String>();
 
-public class SpeedRegionConsts {
-	public static final String REGION_TYPE_KEY = "regiontype";
-	public static final String SOURCE_KEY = "source";
-	public static final double DEFAULT_MIN_CELL_LENGTH_METRES = 200;
+	public List<String> getFlagEncoders() {
+		return flagEncoders;
+	}
+
+	public void setFlagEncoders(List<String> flagEncoders) {
+		this.flagEncoders = flagEncoders;
+	}
+
+	public List<String> getRegionTypes() {
+		return regionTypes;
+	}
+
+	public void setRegionTypes(List<String> regionIds) {
+		this.regionTypes = regionIds;
+	}
 }

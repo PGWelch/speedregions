@@ -21,15 +21,14 @@ import com.vividsolutions.jts.geom.Geometry;
 public interface SpeedRegionLookup {
 	/**
 	 * For a given edge, find what region it sits within and returned
-	 * the standardised string of the region id.
+	 * the standardised string of the region type.
 	 * @param edge
 	 * @return Region id (standardised) or null if none found.
 	 */
-	String findRegionId(Geometry edge);
+	String findRegionType(Geometry edge);
 
-	
 	public interface SpeedRuleLookup{
-		SpeedRule getSpeedRule(String standardisedRegionId);
+		SpeedRule getSpeedRule(String standardisedRegionType);
 	}
 	
 	/**

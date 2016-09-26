@@ -15,29 +15,28 @@
  */
 package com.opendoorlogistics.speedregions.beans;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 /**
  * For a given flag encoder and regionid, the speed rule is applied
  * if the speed rule contains both the regionid in its list of regions,
- * and the flag enconder name (e.g. "car", "foot") in its list of flag encoders.
+ * and the flag encoder name (e.g. "car", "foot") in its list of flag encoders.
  * @author Phil
  *
  */
 public class SpeedRule extends JSONToString{
-	private Map<String,Integer> speedsByRoadType = new TreeMap<String, Integer>();
+	private String id;
+	private String parentId;
+	private Map<String,Float> speedsByRoadType = new TreeMap<String, Float>();
 	private double multiplier = 1;
-	private List<String> flagEncoders = new ArrayList<String>();
-	private List<String> regionIds= new ArrayList<String>();
 	private SpeedUnit speedUnit = SpeedUnit.DEFAULT;
+	private MatchRule matchRule = new MatchRule();
 	
-	public Map<String, Integer> getSpeedsByRoadType() {
+	public Map<String, Float> getSpeedsByRoadType() {
 		return speedsByRoadType;
 	}
-	public void setSpeedsByRoadType(Map<String, Integer> speedsByRoadType) {
+	public void setSpeedsByRoadType(Map<String, Float> speedsByRoadType) {
 		this.speedsByRoadType = speedsByRoadType;
 	}
 	public double getMultiplier() {
@@ -47,24 +46,32 @@ public class SpeedRule extends JSONToString{
 		this.multiplier = multiplier;
 	}
 
-	public List<String> getFlagEncoders() {
-		return flagEncoders;
-	}
-	public void setFlagEncoders(List<String> flagEncoders) {
-		this.flagEncoders = flagEncoders;
-	}
-	public List<String> getRegionIds() {
-		return regionIds;
-	}
-	public void setRegionIds(List<String> regionIds) {
-		this.regionIds = regionIds;
-	}
+
 	public SpeedUnit getSpeedUnit() {
 		return speedUnit;
 	}
 	public void setSpeedUnit(SpeedUnit speedUnit) {
 		this.speedUnit = speedUnit;
 	}
+	public String getId() {
+		return id;
+	}
+	public void setId(String id) {
+		this.id = id;
+	}
+	public String getParentId() {
+		return parentId;
+	}
+	public void setParentId(String parentId) {
+		this.parentId = parentId;
+	}
+	public MatchRule getMatchRule() {
+		return matchRule;
+	}
+	public void setMatchRule(MatchRule matchRule) {
+		this.matchRule = matchRule;
+	}
+
 	
 
 }

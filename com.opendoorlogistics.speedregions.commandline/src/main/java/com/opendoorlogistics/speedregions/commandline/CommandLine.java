@@ -1,31 +1,45 @@
+/*
+ * Copyright 2016 Open Door Logistics Ltd
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *   
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.opendoorlogistics.speedregions.commandline;
 
+import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import com.opendoorlogistics.speedregions.Examples;
+import com.opendoorlogistics.speedregions.beans.SpeedRulesFile;
 import com.opendoorlogistics.speedregions.processor.RegionProcessorUtils;
+import com.opendoorlogistics.speedregions.processor.SpeedRulesFilesProcesser;
 
 public class CommandLine {
 	private static final Logger LOGGER = Logger.getLogger(CommandLine.class.getName());
 	private final Map<String,AbstractCommand> commands;
 	
 	public static void main(String[] args) {
-		CommandLine cl = new CommandLine();
-		State state = new State();
-		cl.processCommandLine(args,state);
+		new CommandLine().processCommandLine(args,new State());
 	}
 
 
-	private CommandLine(){
+	CommandLine(){
 		commands= createCommands();
 	}
 
-	private void processCommandLine(String[] args ,State state) {
+	public void processCommandLine(String[] args ,State state) {
 		int i = 0;
 		while (i < args.length) {
 			String arg = args[i];
@@ -113,17 +127,99 @@ public class CommandLine {
 
 		ArrayList<AbstractCommand> tmp = new ArrayList<AbstractCommand>();
 
-		// add buffer
-		tmp.add(new AbstractCommand("Create buffer around a region" , "buffer") {
+		tmp.add(new AbstractCommand("Load a raw rules file. Replaces existing file. Usage -l filename.", "l") {
 			
 			@Override
 			public void execute(String[] args, State state) {
-				// region id, projection, bufferkm
-				if(args.length!=3){
-					throw new RuntimeException("Buffer needs 3 commands");
+				if(args.length!=1){
+					throw new RuntimeException("Expected one argument for load command");
 				}
+				state.rules = RegionProcessorUtils.fromJSON(new File(args[0]),SpeedRulesFile.class);
 			}
 		});
+
+		tmp.add(new AbstractCommand("Import a raw rules file. Contents are added to existing file. Usage -i filename.", "i") {
+			
+			@Override
+			public void execute(String[] args, State state) {
+				if(args.length!=1){
+					throw new RuntimeException("Expected one argument for load command");
+				}
+				SpeedRulesFile newFile= RegionProcessorUtils.fromJSON(new File(args[0]),SpeedRulesFile.class);
+				state.compiled = null;
+				SpeedRulesFilesProcesser.addToFile(state.rules, newFile);
+			}
+		});
+		
+		tmp.add(new AbstractCommand("Add example Malta data to existing file. Usage -malta filename.", "malta") {
+			
+			@Override
+			public void execute(String[] args, State state) {
+				state.compiled = null;
+				SpeedRulesFilesProcesser.addToFile(state.rules, Examples.createMaltaExample(0.75));
+			}
+		});
+		
+		tmp.add(new AbstractCommand("Save a raw rules file. Usage -s filename.", "s") {
+			
+			@Override
+			public void execute(String[] args, State state) {
+				if(args.length!=1){
+					throw new RuntimeException("Expected one argument for load command");
+				}
+				RegionProcessorUtils.toJSONFile(state.rules, new File(args[0]));
+			}
+		});
+		
+		tmp.add(new AbstractCommand("Create compiled form of rules. Usage -c" , "c") {
+			
+			@Override
+			public void execute(String[] args, State state) {
+				state.compile();
+			}
+		});
+
+		tmp.add(new AbstractCommand("Export compiled form of rules. Trigger compile if one not done before. Usage -ec filename" , "ec") {
+			
+			@Override
+			public void execute(String[] args, State state) {
+				if(args.length==0){
+					throw new RuntimeException("No filename provided");
+				}
+				state.compileIfNull();
+				RegionProcessorUtils.toJSONFile(state.compiled, new File(args[0]));
+				
+			}
+		});
+
+
+		tmp.add(new AbstractCommand("Export an Excel file for visualisation in ODL Studio. Trigger compile if one not done before. Usage -odl filename" , "odl") {
+			
+			@Override
+			public void execute(String[] args, State state) {
+				if(args.length==0){
+					throw new RuntimeException("No filename provided");
+				}
+				state.compileIfNull();
+				RegionProcessorUtils.toJSONFile(state.compiled, new File(args[0]));
+				new ExcelWriter().exportState(state, new File(args[0]));
+			}
+		});
+		
+		tmp.add(new AbstractCommand("Set min cell length limit (metres). Usage -limit metres", "limit") {
+			
+			@Override
+			public void execute(String[] args, State state) {
+				if(args.length==0){
+					throw new RuntimeException("No limit provided");
+				}
+				state.minCellLength = Double.parseDouble(args[0]);
+			}
+		});
+
+		
+		// add buffer
+		tmp.add(new BufferCommand());
 
 		// add help
 		tmp.add(new AbstractCommand("List all commands", "help", "h") {
@@ -161,19 +257,5 @@ public class CommandLine {
 	}
 
 
-	private final static Pattern SPLIT_COMMAND_PATTERN = Pattern.compile("\"(\\\"|[^\"])*?\"|[^ ]+", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
-	public static String[] splitLineIntoTokens(String line) {
-
-		List<String> found = new ArrayList<String>();
-		if (line != null && line.length() > 0) {
-			line = line.trim();
-			Matcher result = SPLIT_COMMAND_PATTERN.matcher(line);
-			while (result.find()) {
-				found.add(result.group());
-			}
-
-		}
-		return found.toArray(new String[found.size()]);
-	}
 }

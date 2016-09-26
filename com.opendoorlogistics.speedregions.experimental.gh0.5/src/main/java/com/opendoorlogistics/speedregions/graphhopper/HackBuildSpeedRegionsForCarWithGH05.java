@@ -13,15 +13,15 @@ import com.graphhopper.util.CmdArgs;
 import com.graphhopper.util.PMap;
 import com.graphhopper.util.shapes.GHPoint;
 import com.opendoorlogistics.speedregions.Examples;
-import com.opendoorlogistics.speedregions.SpeedRegionBeanBuilder;
+import com.opendoorlogistics.speedregions.SpeedRegionCompiler;
 import com.opendoorlogistics.speedregions.SpeedRegionLookup;
-import com.opendoorlogistics.speedregions.SpeedRegionLookupBuilder;
 import com.opendoorlogistics.speedregions.SpeedRegionLookup.SpeedRuleLookup;
-import com.opendoorlogistics.speedregions.beans.RegionLookupBean;
+import com.opendoorlogistics.speedregions.SpeedRegionLookupBuilder;
+import com.opendoorlogistics.speedregions.beans.CompiledSpeedRegions;
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
-import com.opendoorlogistics.speedregions.beans.SpeedRules;
+import com.opendoorlogistics.speedregions.beans.SpeedRulesFile;
 import com.opendoorlogistics.speedregions.beans.SpeedUnit;
-import com.opendoorlogistics.speedregions.processor.RegionProcessorUtils;
+import com.opendoorlogistics.speedregions.processor.GeomConversion;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Point;
 
@@ -33,9 +33,9 @@ public class HackBuildSpeedRegionsForCarWithGH05 {
 
 	public static void main(String[] strArgs) throws Exception {
 		System.out.println("Run dir is " + new File("").getAbsolutePath());
-		SpeedRules rules = Examples.createMaltaExample(0.2);
-		RegionLookupBean rlb = SpeedRegionBeanBuilder.buildBeanFromSpeedRulesObjs(Arrays.asList(rules), 200);		
-		SpeedRegionLookup lookup = SpeedRegionLookupBuilder.convertFromBean(rlb);
+		SpeedRulesFile rules = Examples.createMaltaExample(0.2);
+		CompiledSpeedRegions rlb = SpeedRegionCompiler.buildBeanFromSpeedRulesObjs(Arrays.asList(rules), 200);		
+		SpeedRegionLookup lookup = SpeedRegionLookupBuilder.convertFromCompiled(rlb);
 		
 		strArgs = new String[]{
 			"config=config.properties",
@@ -86,8 +86,8 @@ public class HackBuildSpeedRegionsForCarWithGH05 {
 				// latest Graphhopper core.
 				GHPoint estmCentre = way.getTag("estimated_center", null);
 				if (estmCentre != null) {
-					Point point = RegionProcessorUtils.newGeomFactory().createPoint(new Coordinate(estmCentre.lon, estmCentre.lat));
-					String regionId = lookup.findRegionId(point);
+					Point point = GeomConversion.newGeomFactory().createPoint(new Coordinate(estmCentre.lon, estmCentre.lat));
+					String regionId = lookup.findRegionType(point);
 					way.setTag("speed_region_id", regionId);
 				}
 
@@ -116,13 +116,9 @@ public class HackBuildSpeedRegionsForCarWithGH05 {
 				String highwayValue = way.getTag("highway");
 
 				if (rule != null) {
-					Integer speed = rule.getSpeedsByRoadType().get(highwayValue);
+					Float speed = rule.getSpeedsByRoadType().get(highwayValue);
 					if (speed != null) {
-						if (rule.getSpeedUnit() == SpeedUnit.MILES_PER_HOUR) {
-							// convert to km/hr
-							return Math.round(speed * 1.60934);
-						}
-						return speed;
+						return SpeedUnit.convert(speed, rule.getSpeedUnit(), SpeedUnit.KM_PER_HOUR);
 					}
 				}
 

@@ -20,9 +20,10 @@ import java.util.List;
 import java.util.TreeMap;
 
 import com.opendoorlogistics.speedregions.SpeedRegionLookup.SpeedRuleLookup;
-import com.opendoorlogistics.speedregions.beans.RegionLookupBean;
+import com.opendoorlogistics.speedregions.beans.CompiledSpeedRegions;
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
-import com.opendoorlogistics.speedregions.beans.SpeedRules;
+import com.opendoorlogistics.speedregions.beans.SpeedRulesFile;
+import com.opendoorlogistics.speedregions.processor.GeomConversion;
 import com.opendoorlogistics.speedregions.processor.QueryProcessor;
 import com.opendoorlogistics.speedregions.processor.RegionProcessorUtils;
 import com.opendoorlogistics.speedregions.processor.SpeedRulesFilesProcesser;
@@ -31,30 +32,30 @@ import com.vividsolutions.jts.geom.Geometry;
 public class SpeedRegionLookupBuilder {
 	public static final double DEFAULT_MIN_CELL_LENGTH_METRES = 10;
 
-	public static SpeedRegionLookup buildFromSpeedRulesFiles(List<File> files ,double minDiagonalLengthMetres){
-		return convertFromBean(SpeedRegionBeanBuilder.buildBeanFromSpeedRulesFiles(files,minDiagonalLengthMetres));
-	}
+//	public static SpeedRegionLookup buildFromSpeedRulesFiles(List<File> files ,double minDiagonalLengthMetres){
+//		return convertFromBean(SpeedRegionCompiler.buildBeanFromSpeedRulesFiles(files,minDiagonalLengthMetres));
+//	}
+//
+//	public static SpeedRegionLookup buildFromSpeedRulesObjs(List<SpeedRulesFile> files ,double minDiagonalLengthMetres){
+//		CompiledSpeedRegions built = SpeedRegionCompiler.buildBeanFromSpeedRulesObjs(files, minDiagonalLengthMetres);
+//		return convertFromBean( built);
+//	}
 
-	public static SpeedRegionLookup buildFromSpeedRulesObjs(List<SpeedRules> files ,double minDiagonalLengthMetres){
-		RegionLookupBean built = SpeedRegionBeanBuilder.buildBeanFromSpeedRulesObjs(files, minDiagonalLengthMetres);
-		return convertFromBean( built);
-	}
 
 
-
-	public static SpeedRegionLookup loadFromBeanFile(File built) {
-		return convertFromBean(RegionProcessorUtils.fromJSON(built, RegionLookupBean.class));
+	public static SpeedRegionLookup loadFromCompiledFile(File built) {
+		return convertFromCompiled(RegionProcessorUtils.fromJSON(built, CompiledSpeedRegions.class));
 	}
 	
-	public static SpeedRegionLookup convertFromBean(RegionLookupBean built) {
+	public static SpeedRegionLookup convertFromCompiled(CompiledSpeedRegions built) {
 		
 		SpeedRulesFilesProcesser processer = new SpeedRulesFilesProcesser();
-		final TreeMap<String, TreeMap<String, SpeedRule>> rulesMap =processer.createRulesMap(built.getRules());
+		final TreeMap<String, TreeMap<String, SpeedRule>> rulesMap =processer.createSelfContainedRulesMap(built.getValidatedRules());
 				
-		final QueryProcessor queryProcessor = new QueryProcessor(RegionProcessorUtils.newGeomFactory(), built.getQuadtree());
+		final QueryProcessor queryProcessor = new QueryProcessor(GeomConversion.newGeomFactory(), built.getQuadtree());
 		return new SpeedRegionLookup() {
 			
-			public String findRegionId(Geometry edge) {
+			public String findRegionType(Geometry edge) {
 				String regionId =queryProcessor.query(edge);
 				return regionId;
 			}

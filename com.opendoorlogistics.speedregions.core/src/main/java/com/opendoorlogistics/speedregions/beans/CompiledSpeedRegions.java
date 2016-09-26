@@ -7,9 +7,9 @@ import java.util.List;
  * @author Phil
  *
  */
-public class RegionLookupBean extends JSONToString{
+public class CompiledSpeedRegions extends JSONToString{
 	private SpatialTreeNode quadtree;
-	private List<SpeedRule> rules;
+	private List<SpeedRule> validatedRules;
 	
 	public SpatialTreeNode getQuadtree() {
 		return quadtree;
@@ -17,11 +17,11 @@ public class RegionLookupBean extends JSONToString{
 	public void setQuadtree(SpatialTreeNode quadtree) {
 		this.quadtree = quadtree;
 	}
-	public List<SpeedRule> getRules() {
-		return rules;
+	public List<SpeedRule> getValidatedRules() {
+		return validatedRules;
 	}
-	public void setRules(List<SpeedRule> rules) {
-		this.rules = rules;
+	public void setValidatedRules(List<SpeedRule> rules) {
+		this.validatedRules = rules;
 	}
 	
 	

@@ -78,11 +78,13 @@
 			<version>1.6</version>
 		</dependency>
 
+<!--
 		<dependency>
 		    <groupId>com.neovisionaries</groupId>
 		    <artifactId>nv-i18n</artifactId>
 		    <version>1.21</version>
 		</dependency>
-
+  -->
+  
 	</dependencies>
 </project>

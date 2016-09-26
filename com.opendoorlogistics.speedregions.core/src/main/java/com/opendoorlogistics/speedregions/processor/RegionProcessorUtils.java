@@ -26,10 +26,15 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Map;
+
+import org.geojson.Feature;
+import org.geojson.GeoJsonObject;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.opendoorlogistics.speedregions.SpeedRegionConsts;
 import com.vividsolutions.jts.geom.GeometryFactory;
 
 /**
@@ -46,16 +51,24 @@ public class RegionProcessorUtils {
 		JACKSON_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
 	}
 
-	public static void toJSONFile(Object o, File file){
-		String json = toJSON(o);
+//	public static void toJSONFile(Object o, File file){
+//		String json = toJSON(o);
+//		try {
+//			internalStringToFile(file, json);			
+//		} catch (Exception e) {
+//			throw asUncheckedException(e);
+//		}
+//	}
+//	
+	public static void toJSONFile(Object o, File textfile){
 		try {
-			internalStringToFile(file, json);			
+			JACKSON_MAPPER.writeValue(textfile, o);
 		} catch (Exception e) {
 			throw asUncheckedException(e);
 		}
 	}
 
-	private static void internalStringToFile(File file, String s) throws FileNotFoundException {
+	public static void stringToFile(File file, String s) throws FileNotFoundException {
 		try(  PrintWriter out = new PrintWriter(file )  ){
 		    out.println( s );
 		}
@@ -80,8 +93,16 @@ public class RegionProcessorUtils {
 	
 
 	public static <T> T fromJSON(File textFile, Class<T> cls) {
-		return fromJSON(readTextFile(textFile), cls);
+
+		try {
+			return JACKSON_MAPPER.readValue(textFile, cls);
+		} catch (Exception e) {
+			
+			throw asUncheckedException(e);
+		}		
 	}
+	
+
 	
 	public static <T> T fromJSON(String json, Class<T> cls) {
 
@@ -161,14 +182,29 @@ public class RegionProcessorUtils {
 		return distance;
 	}
 	
+
 	/**
-	 * We may need to change the precision model in the geometry factory later-on,
-	 * so we keep the creation of a geometry factory in one place
+	 * Finds regionid. Doesn't standardise it.
+	 * @param feature
 	 * @return
 	 */
-	public static GeometryFactory newGeomFactory() {
-		GeometryFactory factory = new GeometryFactory();
-		return factory;
+	public static String findRegionType(Feature feature ){
+		return findProperty(feature, SpeedRegionConsts.REGION_TYPE_KEY);
+	}
+	
+	/**
+	 * Finds regionid. Doesn't standardise it.
+	 * @param feature
+	 * @return
+	 */
+	public static String findProperty(Feature feature , String key){
+		key = stdString(key);
+		for (Map.Entry<String, Object> entry : feature.getProperties().entrySet()) {
+			if (entry.getValue() != null && key.equals(stdString(entry.getKey())) ) {
+				return entry.getValue().toString();
+			}
+		}
+		return null;
 	}
 	
 }

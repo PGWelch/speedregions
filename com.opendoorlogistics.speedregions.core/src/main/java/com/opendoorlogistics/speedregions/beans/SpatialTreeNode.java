@@ -28,7 +28,7 @@ import com.opendoorlogistics.speedregions.processor.RegionProcessorUtils;
  */
 public class SpatialTreeNode extends JSONToString{
 	private Bounds bounds;
-	private String regionId;
+	private String regionType;
 	private long assignedPriority;
 	private List<SpatialTreeNode> children = new ArrayList<SpatialTreeNode>(0);
 
@@ -52,7 +52,7 @@ public class SpatialTreeNode extends JSONToString{
 			copyToThis.setBounds(null);
 
 		}
-		copyToThis.setRegionId(deepCopyThis.getRegionId());
+		copyToThis.setRegionType(deepCopyThis.getRegionType());
 		copyToThis.setAssignedPriority(deepCopyThis.getAssignedPriority());
 	}
 
@@ -80,12 +80,12 @@ public class SpatialTreeNode extends JSONToString{
 	 * Only leaf nodes have assigned region ids
 	 * @return
 	 */
-	public String getRegionId() {
-		return regionId;
+	public String getRegionType() {
+		return regionType;
 	}
 
-	public void setRegionId(String assignedRegionId) {
-		this.regionId = assignedRegionId;
+	public void setRegionType(String assignedRegionId) {
+		this.regionType = assignedRegionId;
 	}
 
 	/**

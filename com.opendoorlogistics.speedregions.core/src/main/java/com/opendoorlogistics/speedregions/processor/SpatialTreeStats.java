@@ -30,13 +30,13 @@ public class SpatialTreeStats extends JSONToString{
 	}
 	
 	private static void recurse(SpatialTreeNode node,SpatialTreeStats stats){
-		if(node.getRegionId()!=null){
-			if(!stats.regionBounds.containsKey(node.getRegionId())){
-				stats.regionBounds.put(node.getRegionId(), Cloner.standard().deepClone(node.getBounds()));
+		if(node.getRegionType()!=null){
+			if(!stats.regionBounds.containsKey(node.getRegionType())){
+				stats.regionBounds.put(node.getRegionType(), Cloner.standard().deepClone(node.getBounds()));
 				stats.regionIds++;
 			}
 			
-			stats.regionBounds.get(node.getRegionId()).expand(node.getBounds());
+			stats.regionBounds.get(node.getRegionType()).expand(node.getBounds());
 		}
 		stats.nodes++;
 		if(node.getChildren().size()==0){

@@ -145,10 +145,10 @@ class RegionSpatialTreeBuilder {
 	 * @return
 	 */
 	private boolean isEqualNonNullAssignment(SpatialTreeNode a, SpatialTreeNode b) {
-		if (a.getRegionId() == null || b.getRegionId() == null) {
+		if (a.getRegionType() == null || b.getRegionType() == null) {
 			return false;
 		}
-		return a.getRegionId().equals(b.getRegionId());
+		return a.getRegionType().equals(b.getRegionType());
 	}
 
 	private void recombineChildrenIfPossible(SpatialTreeNode node) {
@@ -225,7 +225,7 @@ class RegionSpatialTreeBuilder {
 				return false;
 			}
 
-			if (child.getRegionId() == null) {
+			if (child.getRegionType() == null) {
 				// Must all be assigned
 				return false;
 			}
@@ -242,7 +242,7 @@ class RegionSpatialTreeBuilder {
 		// recombine
 		SpatialTreeNode child0 = node.getChildren().get(0);
 		node.getChildren().clear();
-		node.setRegionId(child0.getRegionId());
+		node.setRegionType(child0.getRegionType());
 		node.setAssignedPriority(child0.getAssignedPriority());
 		return true;
 	}
@@ -251,7 +251,7 @@ class RegionSpatialTreeBuilder {
 		// check if node is already assigned, nodes are assigned to the first geometry
 		// that (a) totally encloses them, or (b) if the node is split to the finest granularity level,
 		// the first geometry they intersect
-		if (node.getRegionId() != null) {
+		if (node.getRegionType() != null) {
 			return;
 		}
 
@@ -275,7 +275,7 @@ class RegionSpatialTreeBuilder {
 		Bounds b = node.getBounds();		
 		boolean nodeIsContainedByPolygon = geometry.polygon.contains(node.getGeometry());
 		if (nodeIsContainedByPolygon || (!isHorizontallySplittable(b) && !isVerticallySplittable(b))) {
-			node.setRegionId(geometry.id);
+			node.setRegionType(geometry.id);
 			node.setAssignedPriority(nextPolygonPriority);
 			return;
 		}
@@ -311,37 +311,8 @@ class RegionSpatialTreeBuilder {
 			
 		}
 
-		// Bounds b = node.getBounds();
-		// if(depth%2==0){
-		// // horizontal split along line of constant latitude
-		// double dLatCentre = getLatCentre(node);
-		// for(int i =0 ; i<=1 ; i++){
-		// double latMin = i==0? b.getMinLat() : dLatCentre;
-		// double latMax = i==0? dLatCentre : b.getMaxLat();
-		// node.getChildren().add(new SpatialTreeNodeWithGeometry(geomFactory, new Bounds(b.getMinLng(), b.getMaxLng(),
-		// latMin, latMax)));
-		// }
-		// }else{
-		// // vertical split along line of constant longitude
-		// double dLngCentre = getLngCentre(node);
-		// for(int i =0 ; i<=1 ; i++){
-		// double lngMin = i==0? b.getMinLng() : dLngCentre;
-		// double lngMax = i==0? dLngCentre : b.getMaxLng();
-		// node.getChildren().add(new SpatialTreeNodeWithGeometry(geomFactory, new Bounds(lngMin,lngMax, b.getMinLat(),
-		// b.getMaxLat())));
-		// }
-		//
-		// }
-		//
-
 		// add to the child geometries after split
 		for (SpatialTreeNode child : node.getChildren()) {
-//			Bounds bc = child.getBounds();
-//			double h = getHeightMetres(bc);
-//			double w = getWidthMetres(bc);
-//			if(!isOkSidesRatio(h/w)|| !isOkSidesRatio(w/h)){
-//				throw new RuntimeException();
-//			}
 			addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, geometry);
 		}
 
@@ -379,7 +350,7 @@ class RegionSpatialTreeBuilder {
 	}
 
 	private void recurseFinaliseNode(SpatialTreeNode node) {
-		if (node.getRegionId() != null) {
+		if (node.getRegionType() != null) {
 			return;
 		}
 

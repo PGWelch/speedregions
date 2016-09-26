@@ -30,6 +30,20 @@ public enum SpeedUnit{
 	
 	public static final SpeedUnit DEFAULT = KM_PER_HOUR;
 	
+	public static double convert(double value, SpeedUnit from, SpeedUnit to){
+		if(from==to){
+			return value;
+		}
+		if(to == SpeedUnit.KM_PER_HOUR){
+			// must be in miles
+			return value * 1.60934;
+		}
+		else{
+			// must be in km
+			return value / (1.60934);
+		}
+	}
+	
 	public static class SpeedUnitDeserialiser extends JsonDeserializer<SpeedUnit>{
 
 	    @Override
