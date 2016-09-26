@@ -45,3 +45,7 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+*.classpath
+*.project
+com.opendoorlogistics.speedregions.commandline/.settings/org.eclipse.jdt.core.prefs
+*.prefs
