@@ -103,7 +103,9 @@ This is our example *CompiledTree* file; it corresponds to the *tree* field in t
 FeatureCollection format
 ------------------------
 
-A featureCollection should only contain Polygon or MultiPolygon geometry types. Each feature should have a **regiontype** property which links to the speed rules. The order of a feature in the featureCollection is used as its priority when assigning an area (technically a leaf node in the spatial tree) to a region. If, for example, you have a featureCollection containing polygons for United Kingdom, Central London and Outer London, your first feature should be the smallest - Central London - followed by Outer London (which Central London sits within) and then the United Kingdom. The order within the collection is therefore used to model overlapping polygons where one polygon sits within another.
+A featureCollection should only contain Polygon or MultiPolygon geometry types. Each feature should have a **regiontype** property which links to the speed rules. RegionType could refer to a geographic area - e.g. London - or a type of geographic area (e.g. 'big city'). Multiple features can therefore have the same regionType, there is no requirement for it to be a unique value.
+
+The order of a feature in the featureCollection is used as its priority when assigning an area (technically a leaf node in the spatial tree) to a region. If, for example, you have a featureCollection containing polygons for United Kingdom, Central London and Outer London, your first feature should be the smallest - Central London - followed by Outer London (which Central London sits within) and then the United Kingdom. The order within the collection is therefore used to model overlapping polygons where one polygon sits within another.
 
 Using with Graphhopper
 ----------------------
@@ -139,3 +141,10 @@ Visualising regions in ODL Studio
 ---------------------------------
 
 TODO DOCUMENT THIS
+
+Future developments
+-------------------
+
+-   Full integration into Graphhopper project
+
+-   Binary format for compiled tree - the large size of the compiled tree can limit the practicallity of speed regions to national level. The file size could be reduced dramatically without much work (for example, the compressed file size of the JSON is just ~3% of the uncompressed).

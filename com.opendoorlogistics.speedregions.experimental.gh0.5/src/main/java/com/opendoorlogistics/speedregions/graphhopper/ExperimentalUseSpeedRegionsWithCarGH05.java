@@ -44,8 +44,19 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 		
 		SpeedRegionLookup lookup = SpeedRegionLookupBuilder.loadFromCommandLineParameters(args.toMap());
 		args = CmdArgs.readFromConfigAndMerge(args, "config", "graphhopper.config");
-		GraphHopper hopper = new GraphHopper().forDesktop().init(args);
+		GraphHopper hopper = new GraphHopper(){
+			@Override
+			protected void postProcessing(){
+				
+				if(debugExportSpeeds!=null){
+					debugExportSpeeds.close();
+				}
+				super.postProcessing();
+			};
+		};
+		hopper.forDesktop().init(args);
 
+	    //protected void postProcessing()
 		String flagEncoders = args.get("graph.flagEncoders", "");
 		int bytesForFlags = args.getInt("graph.bytesForFlags", 4);
 		String[] splitEncoders = flagEncoders.split(",");
@@ -71,10 +82,7 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 		hopper.setEncodingManager(myEncodingManager);
 		hopper.importOrLoad();
 		hopper.close();
-		
-		if(debugExportSpeeds!=null){
-			
-		}
+
 	}
 
 	private static CarFlagEncoder newCarFlagEncoder(PMap config, final SpeedRegionLookup lookup) {
@@ -119,24 +127,29 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 
 			@Override
 			protected double getSpeed(OSMWay way) {
-				// Try to get explicit rule first
+				
 				SpeedRule rule = getSpeedRule(way);
 				String highwayValue = way.getTag("highway");
-
-				if (rule != null) {
-					Float speed = rule.getSpeedsByRoadType().get(highwayValue);
-					if (speed != null) {
-						return SpeedUnit.convert(speed, rule.getSpeedUnit(), SpeedUnit.KM_PER_HOUR);
-					}
-				}
-
-				// If no rule set, use the superclass logic and apply the multiplier
 				double speed = super.getSpeed(way);
-				if (rule != null) {
-					speed *= rule.getMultiplier();
+				if(rule!=null){
+					return rule.applyRule(highwayValue, speed);
 				}
-
 				return speed;
+
+//				if (rule != null) {
+//					Float speed = rule.getSpeedsByRoadType().get(highwayValue);
+//					if (speed != null) {
+//						return SpeedUnit.convert(speed, rule.getSpeedUnit(), SpeedUnit.KM_PER_HOUR);
+//					}
+//				}
+//
+//				// If no rule set, use the superclass logic and apply the multiplier
+//				double speed = super.getSpeed(way);
+//				if (rule != null) {
+//					speed *= rule.getMultiplier();
+//				}
+//
+//				return speed;
 			}
 
 			@Override

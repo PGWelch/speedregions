@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
+import com.opendoorlogistics.speedregions.beans.SpeedUnit;
 import com.opendoorlogistics.speedregions.beans.files.AbstractSpeedRulesFile;
 import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
 import com.rits.cloning.Cloner;
@@ -129,19 +130,23 @@ public class SpeedRulesProcesser {
 				parentId = TextUtils.stdString(parentId);
 				SpeedRule originalParent = originalRules.get(parentId);
 				
-				// combine multiplier
-				rule.setMultiplier(rule.getMultiplier() * originalParent.getMultiplier());
-				
-				// combine speeds by type
+	
+				// combine speeds by type, including our multiplier
 				if(originalParent.getSpeedsByRoadType()!=null){
 					for(Map.Entry<String, Float> entry : originalParent.getSpeedsByRoadType().entrySet()){
 						String type = entry.getKey();
 						type = TextUtils.stdString(type);
 						if(!rule.getSpeedsByRoadType().containsKey(type)){
-							rule.getSpeedsByRoadType().put(type, entry.getValue());
+							double parentSpeed = entry.getValue();
+							double childUnitSpeed = SpeedUnit.convert(parentSpeed, originalParent.getSpeedUnit(), rule.getSpeedUnit());
+							double postMultiplier = childUnitSpeed * rule.getMultiplier();
+							rule.getSpeedsByRoadType().put(type,(float)postMultiplier);
 						}
 					}					
 				}
+	
+				// finally update the multiplier for roads without a matching type
+				rule.setMultiplier(rule.getMultiplier() * originalParent.getMultiplier());
 				
 				// go to next parent
 				parentId = originalParent.getParentId();

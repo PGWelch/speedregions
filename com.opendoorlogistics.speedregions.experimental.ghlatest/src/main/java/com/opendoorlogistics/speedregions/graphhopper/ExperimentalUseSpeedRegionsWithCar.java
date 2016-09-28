@@ -105,25 +105,16 @@ public class ExperimentalUseSpeedRegionsWithCar {
 
 			@Override
 			protected double getSpeed(OSMWay way) {
-				// Try to get explicit rule first
+				
 				SpeedRule rule = getSpeedRule(way);
 				String highwayValue = way.getTag("highway");
-
-				if (rule != null) {
-					Float speed = rule.getSpeedsByRoadType().get(highwayValue);
-					if (speed != null) {
-						return SpeedUnit.convert(speed, rule.getSpeedUnit(), SpeedUnit.KM_PER_HOUR);
-					}
-				}
-
-				// If no rule set, use the superclass logic and apply the multiplier
 				double speed = super.getSpeed(way);
-				if (rule != null) {
-					speed *= rule.getMultiplier();
+				if(rule!=null){
+					return rule.applyRule(highwayValue, speed);
 				}
-
 				return speed;
 			}
+			
 
 			@Override
 			protected double applyMaxSpeed(OSMWay way, double speed) {
