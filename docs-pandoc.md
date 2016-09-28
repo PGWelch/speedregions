@@ -159,9 +159,76 @@ and the compiled files will be a lot larger.
 We recommend using a starting value of 1000m and only reducing this if needed.
 
 ## Speed rules configuration
+The following *CompiledSpeedRules* example sets up speeds in MILES_PER_HOUR for different types
+of roads in the UK, following the OpenStreetMap [highway tag conventions](http://wiki.openstreetmap.org/wiki/Key:highway). A rule is setup with id 'TypicalUKSpeeds' to apply
+to the regionType 'UK', which would correspond to a region covering the whole UK. 
+Different rules for regionTypes London and Birmingham are then setup with a parentId of TypicalUKSpeeds and a multiplier
+of between 0.6-0.8. 
+The rules for London and Birmingham will therefore use the speeds setup in their parent rule record (the UK record), 
+but reduced by between 60% and 80%.
 
-TODO DOCUMENT SETTING BY ROAD TYPE, AND PARENT-CHILD RULES
+To specify speed in kilometres instead set the *speedUnit* field to KM_PER_HOUR.
 
+	{
+	  "rules" : [
+		{
+			"parentId" : "TypicalUKSpeeds",		
+			"multiplier" : 0.6,
+			"matchRule" : {
+			  "flagEncoders" : [ "car" ],
+			  "regionTypes" : [ "InnerLondon" ]
+			}
+		}		
+		,{
+			"parentId" : "TypicalUKSpeeds",		
+			"multiplier" : 0.8,
+			"matchRule" : {
+			  "flagEncoders" : [ "car" ],
+			  "regionTypes" : [ "OuterLondon" ]
+			}
+		}		
+		,{
+			"parentId" : "TypicalUKSpeeds",		
+			"multiplier" : 0.8,
+			"matchRule" : {
+			  "flagEncoders" : [ "car" ],
+			  "regionTypes" : [ "Birmingham" ]
+			}
+		}			
+		,{
+		  "id" : "TypicalUKSpeeds",
+		  "speedsByRoadType" : {
+			"living_street" : 3.1,
+			"motorroad" : 55.9,
+			"motorway" : 62.1,
+			"motorway_link" : 43.5,
+			"primary" : 40.4,
+			"primary_link" : 37.3,
+			"residential" : 18.6,
+			"road" : 12.4,
+			"secondary" : 37.3,
+			"secondary_link" : 31.1,
+			"service" : 12.4,
+			"tertiary" : 31.1,
+			"tertiary_link" : 24.9,
+			"track" : 9.3,
+			"trunk" : 43.5,
+			"trunk_link" : 40.4,
+			"unclassified" : 18.6
+		  },
+		  "multiplier" : 1.0,
+		  "speedUnit" : "MILES_PER_HOUR",
+		  "matchRule" : {
+			"flagEncoders" : [ "car" ],
+			"regionTypes" : [ "UK" ]
+		  }
+		}	
+	  ],
+	  "tree" : {
+		....
+	  }
+	}
+	
 ## Visualising regions in ODL Studio
 TODO DOCUMENT THIS
 

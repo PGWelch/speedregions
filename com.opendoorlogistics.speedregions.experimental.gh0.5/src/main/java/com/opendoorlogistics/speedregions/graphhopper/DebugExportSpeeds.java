@@ -47,7 +47,7 @@ public class DebugExportSpeeds {
 		try {
 			String s = llformat.format(estmCentre.lat) + "\t" + llformat.format(estmCentre.lon) + "\t" + speedformat.format(speed) + System.lineSeparator();
 			out.write(s);
-			if(random.nextInt(25)==0){
+			if(random.nextInt(10)==0){
 				outSubset.write(s);
 			}
 		} catch (IOException e) {

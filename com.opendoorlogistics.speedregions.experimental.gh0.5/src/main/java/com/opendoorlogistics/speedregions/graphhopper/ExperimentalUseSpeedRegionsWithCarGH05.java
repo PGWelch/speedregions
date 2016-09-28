@@ -37,6 +37,10 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 	public static void main(String[] strArgs) throws Exception {	
 		CmdArgs args = CmdArgs.read(strArgs);
 		
+		// override the speed storage to give some more accuracy in storing speeds
+		args.put("speedBits", 8);
+		args.put("speedFactor", 1);
+	                
 		String debugExportFile= args.get("debugexport", null);
 		if(debugExportFile!=null){
 			debugExportSpeeds = new DebugExportSpeeds(new File(debugExportFile));
