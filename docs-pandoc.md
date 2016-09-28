@@ -1,5 +1,5 @@
 # SpeedRegions
-SpeedRegions is a utility library decided for use with [Graphhopper](https://github.com/graphhopper/graphhopper)
+SpeedRegions is a work-in-progress utility library designed for use with [Graphhopper](https://github.com/graphhopper/graphhopper)
 which allows geographic regions with different speed profiles (e.g. city, country) to be defined. 
 SpeedRegions uses several types of text files containing data in JSON format as its input.
 The most important text file type is an *UncompiledSpeedRules* file. Here's an example file:
@@ -36,7 +36,7 @@ An uncompiled file is called 'uncompiled' because the SpeedRegions library still
 (a kind of map) which stores the geographic regions in a data structure optimised for querying the region a road
 sits within. 
 Building this spatial lookup can be slow - e.g. a couple of minutes just for the United Kingdom dependent on accuracy.
-As speed rules will likely be changed often (e.g. make a road type a little faster or slower) but the regions won't
+As speed rules will change often (e.g. make a road type a little faster or slower) but the geographic regions won't
 change as often, we support pre-compiling this spatial tree before using it in Graphhopper. 
 You can therefore compile the spatial tree once and then quickly modify the speed rules in the compiled file without
 having to recompile the tree. 
@@ -46,12 +46,12 @@ SpeedRegions can use several different types of JSON text files:
 
 1. **UncompiledSpeedRules**. A JSON text file containing the speed rules and GeoJSON feature collection.
 1. **CompiledSpeedRules**. A JSON text file containing the speed rules and the built spatial tree.
-1. **FeatureCollection**. A GeoJSON file containing a single feature collection.
+1. **FeatureCollection**. A GeoJSON text file containing a single feature collection.
 1. **CompiledTree**. A JSON text file the containing built spatial tree.
 
-You can use the command line tools to build the *CompiledTree* from a *FeatureCollection*. 
-You build this once and then place it into a *CompiledSpeedRules* file. 
-YOu then tweak the speed rules in the *CompiledSpeedRules* as you like, without rebuilding the tree again.
+You can use the command line tools to build the *CompiledTree* file from a *FeatureCollection* file. 
+You build this tree once and then place it into a *CompiledSpeedRules* file. 
+You then tweak the speed rules in the *CompiledSpeedRules* as you like, without rebuilding the tree again.
 
 This is an example *CompiledSpeedRules* file:
 
@@ -79,7 +79,7 @@ This is an example *CompiledSpeedRules* file:
 	}
 
 In this case the tree is very small - it contains only one node. 
-Generally speaking the tree will be a large multi-level data structure.
+Generally speaking the tree will be a very large multi-level data structure.
 This is an example *FeatureCollection* file 
 - it is pure geoJson and corresponds to the *geoJson* field in the UncompiledSpeedRules file:
 
@@ -155,8 +155,10 @@ and the compiled files will be a lot larger.
 
 We recommend using a starting value of 1000m and only reducing this if needed.
 
+## Speed rules configuration
 
+TODO DOCUMENT SETTING BY ROAD TYPE, AND PARENT-CHILD RULES
 
 ## Visualising regions in ODL Studio
 
-TODO 
+TODO DOCUMENT THIS

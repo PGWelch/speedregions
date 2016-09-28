@@ -40,7 +40,7 @@ public class DebugExportSpeeds {
 		}
 	}
 	
-	public void writeFile() throws IOException{
+	public void close() throws IOException{
 		out.close();
 	}
 }
