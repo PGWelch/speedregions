@@ -1,5 +1,4 @@
 # SpeedRegions
-
 SpeedRegions is a utility library decided for use with [Graphhopper](https://github.com/graphhopper/graphhopper)
 which allows geographic regions with different speed profiles (e.g. city, country) to be defined. 
 SpeedRegions uses several types of text files containing data in JSON format as its input.
@@ -124,8 +123,9 @@ The order within the collection is therefore used to model overlapping polygons 
 	
 ## Using with Graphhopper
 The integration with Graphhopper is currently experimental and available for car speed profile only.
+Full integration within the Graphhopper project is planned.
 See the projects com.opendoorlogistics.speedregions.experimental.gh0.5 and com.opendoorlogistics.speedregions.experimental.ghlatest
-to build a car profile graph using speed regions with Graphhopper 0.5 and Graphhopper latest release (0.7 as of 28/9/2016).
+to build a car profile graph using speed regions with Graphhopper 0.5 and Graphhopper latest release (version 0.7 as of 28/9/2016).
 
 To build a Graphhopper graph using speed regions, build the project using Maven and run from the command line as shown [here](http://www.opendoorlogistics.com/tutorials/tutorial-vi-advance-configuration/building-road-network-graphs/)
 but with one of two sets of additional command line arguments:

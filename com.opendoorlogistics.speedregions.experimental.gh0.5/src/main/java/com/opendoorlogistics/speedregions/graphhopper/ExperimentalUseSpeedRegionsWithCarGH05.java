@@ -1,5 +1,6 @@
 package com.opendoorlogistics.speedregions.graphhopper;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import com.graphhopper.GraphHopper;
@@ -24,6 +25,7 @@ import com.vividsolutions.jts.geom.Point;
  *
  */
 public class ExperimentalUseSpeedRegionsWithCarGH05 {
+	private static DebugExportSpeeds debugExportSpeeds;
 	
 	/**
 	 * A temporary hack to use speed regions pending proper integration into Graphhopper
@@ -34,6 +36,12 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 	 */
 	public static void main(String[] strArgs) throws Exception {	
 		CmdArgs args = CmdArgs.read(strArgs);
+		
+		String debugExportFile= args.get("debugexport", null);
+		if(debugExportFile!=null){
+			debugExportSpeeds = new DebugExportSpeeds(new File(debugExportFile));
+		}
+		
 		SpeedRegionLookup lookup = SpeedRegionLookupBuilder.loadFromCommandLineParameters(args.toMap());
 		args = CmdArgs.readFromConfigAndMerge(args, "config", "graphhopper.config");
 		GraphHopper hopper = new GraphHopper().forDesktop().init(args);
@@ -63,6 +71,10 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 		hopper.setEncodingManager(myEncodingManager);
 		hopper.importOrLoad();
 		hopper.close();
+		
+		if(debugExportSpeeds!=null){
+			
+		}
 	}
 
 	private static CarFlagEncoder newCarFlagEncoder(PMap config, final SpeedRegionLookup lookup) {
@@ -82,7 +94,12 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 					way.setTag("speed_region_id", regionId);
 				}
 
-				return super.handleWayTags(way, allowed, relationFlags);
+				long val= super.handleWayTags(way, allowed, relationFlags);
+				
+				if(debugExportSpeeds!=null){
+					debugExportSpeeds.handledWayTag(this,way, val);
+				}
+				return val;
 			}
 
 			private SpeedRule getSpeedRule(OSMWay way) {
