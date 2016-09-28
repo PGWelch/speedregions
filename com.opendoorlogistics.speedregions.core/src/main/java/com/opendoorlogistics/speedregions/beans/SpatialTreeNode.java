@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.opendoorlogistics.speedregions.processor.RegionProcessorUtils;
+import com.opendoorlogistics.speedregions.TextUtils;
 
 /**
  * Spatial tree node with support for JSON serialisation / deserialisation
@@ -105,7 +105,7 @@ public class SpatialTreeNode extends JSONToString{
 
 	@JsonIgnore
 	public String toJSON() {
-		return RegionProcessorUtils.toJSON(this);
+		return TextUtils.toJSON(this);
 	}
 
 	@Override
@@ -117,6 +117,6 @@ public class SpatialTreeNode extends JSONToString{
 	
 
 	public static SpatialTreeNode fromJSON(String json) {
-		return RegionProcessorUtils.fromJSON(json, SpatialTreeNode.class);
+		return TextUtils.fromJSON(json, SpatialTreeNode.class);
 	}
 }

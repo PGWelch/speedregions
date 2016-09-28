@@ -28,11 +28,12 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 
 import com.opendoorlogistics.speedregions.SpeedRegionConsts;
-import com.opendoorlogistics.speedregions.processor.GeomConversion;
-import com.opendoorlogistics.speedregions.processor.RegionProcessorUtils;
+import com.opendoorlogistics.speedregions.TextUtils;
+import com.opendoorlogistics.speedregions.spatialtree.GeomUtils;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.simplify.TopologyPreservingSimplifier;
 
 public class BufferCommand extends AbstractCommand{
 
@@ -61,53 +62,73 @@ public class BufferCommand extends AbstractCommand{
 		String bufferDistance = args[2];
 		String newRegionId = args[3];
 		
-		FeatureCollection fc = state.rules.getGeoJson();
+		FeatureCollection fc = state.featureCollection;
 		
-		Feature feature = createBuffer(regionid, EPSG, bufferDistance,newRegionId, fc);
+		CreateResult result = createBuffer(regionid, EPSG, bufferDistance,newRegionId, fc);
 		
 		// overwrite existing
-		String stdNewRegionid = RegionProcessorUtils.stdString(newRegionId);
+		String stdNewRegionid = TextUtils.stdString(newRegionId);
 		for(int i =0 ; i< fc.getFeatures().size();i++){
-			String regionId = RegionProcessorUtils.findRegionType(fc.getFeatures().get(i));
-			if(regionid!=null && RegionProcessorUtils.stdString(regionId).equals(stdNewRegionid)){
-				fc.getFeatures().set(i, feature);
+			String regionId = TextUtils.findRegionType(fc.getFeatures().get(i));
+			if(regionid!=null && TextUtils.stdString(regionId).equals(stdNewRegionid)){
+				fc.getFeatures().set(i, result.newFeature);
 				return;
 			}
 		}
-		fc.getFeatures().add(feature);
+		
+		// add instead... if we have an enclosing feature add before that so it has correct priority
+		if(result.enclosedBy!=null){
+			int indx = fc.getFeatures().indexOf(result.enclosedBy);
+			fc.getFeatures().add(indx, result.newFeature);
+		}else{
+			// otherwise add at the end
+			fc.getFeatures().add(result.newFeature);			
+		}
 		
 		// clear compiled as no longer valid
 		state.compiled = null;
 	}
 
-	public Feature createBuffer(
+	private static class CreateResult{
+		Feature newFeature;
+		Feature enclosedBy;
+		
+		CreateResult(Feature newFeature, Feature enclosedBy) {
+			this.newFeature = newFeature;
+			this.enclosedBy = enclosedBy;
+		}
+		
+		
+	}
+	
+	private CreateResult createBuffer(
 			String regionid,
 			String EPSG,
 			String bufferDistance ,
 			String newRegionId ,		
 			FeatureCollection fc) {
 		// get jts geoms and envelopes
-		GeometryFactory factory = GeomConversion.newGeomFactory();
+		GeometryFactory factory = GeomUtils.newGeomFactory();
 		List<Feature> features = fc.getFeatures();
 		HashMap<Feature, Geometry> jts = new HashMap<>();
 		final HashMap<Feature, Envelope> envelopes = new HashMap<>();
 		for (Feature a : features) {
-			if(!GeomConversion.isGeoJSONPolyOrMultiPoly(a.getGeometry())){
+			if(!GeomUtils.isGeoJSONPolyOrMultiPoly(a.getGeometry())){
 				throw new RuntimeException("Found feature which isn't polygon or multipolygon");
 			}
 			
-			Geometry g = GeomConversion.toJTS(factory, a.getGeometry());
+			Geometry g = GeomUtils.toJTS(factory, a.getGeometry());
 			jts.put(a, g);
 			envelopes.put(a, g.getEnvelopeInternal());
 		}
 			
 		// find the feature we're doing the buffer around
 		Feature toBufferFeature=null;
-		String regionId = RegionProcessorUtils.stdString(regionid);
+		String regionId = TextUtils.stdString(regionid);
 		for (Feature a : features) {
-			String testId = RegionProcessorUtils.findRegionType(a);
+			String testId = TextUtils.findRegionType(a);
 			if(testId!=null){
-				testId = RegionProcessorUtils.stdString(testId);
+				testId = TextUtils.stdString(testId);
 				if(testId.equals(regionId)){
 					toBufferFeature = a;
 					break;
@@ -119,7 +140,7 @@ public class BufferCommand extends AbstractCommand{
 		}
 		
 		// Find the smallest area polygon enclosing the feature. 
-		// We use angular area which is a bit of a hack
+		// TODO change from angular area to projected area.
 		double smallestEnclosingAngularArea = Double.MAX_VALUE;
 		Feature smallestEnclosing=null;
 		Geometry g = jts.get(toBufferFeature);
@@ -128,6 +149,10 @@ public class BufferCommand extends AbstractCommand{
 				continue;
 			}
 			Geometry ga = jts.get(a);
+			
+			// do a buffer around the geometry to clear up issues like slivers
+			ga = ga.buffer(0);
+			
 			if(ga.contains(g)){
 				double area = ga.getArea();
 				if(smallestEnclosing==null || area < smallestEnclosingAngularArea){
@@ -154,6 +179,7 @@ public class BufferCommand extends AbstractCommand{
 			throw new RuntimeException("Error creating EPSG coordinate system " +EPSG);
 		}
 		
+
 		// project the feature to the grid
 		Geometry projectedFeature =transform(jts.get(toBufferFeature), toGrid, EPSG);
 
@@ -173,20 +199,24 @@ public class BufferCommand extends AbstractCommand{
 			buffer = buffer.intersection(projectedEnclosing);
 		}
 		
+		// simply the buffer. Tolerance of 1% buffer distance should be OK
+		double simplifyTol = bufferSize/100;
+		buffer = TopologyPreservingSimplifier.simplify(buffer, simplifyTol);
+		
 		// project back
 		Geometry wgs84Buffer = transform(buffer, fromGrid, EPSG);
-		String originalSource = RegionProcessorUtils.findProperty(toBufferFeature, SpeedRegionConsts.SOURCE_KEY);
-		String newSource = "Buffer distance " + bufferSize + " around region " + regionId;
+		String originalSource = TextUtils.findProperty(toBufferFeature, SpeedRegionConsts.SOURCE_KEY);
+		String newSource = "Buffer distance " + bufferSize + " around region " + regionId +".";
 		if(originalSource!=null){
-			newSource = " " + originalSource;
+			newSource = newSource + " " + originalSource;
 		}
 		
 		// create feature
 		Feature newFeature = new Feature();
-		newFeature.setGeometry(GeomConversion.toGeoJSON(wgs84Buffer));
+		newFeature.setGeometry(GeomUtils.toGeoJSON(wgs84Buffer));
 		newFeature.getProperties().put(SpeedRegionConsts.REGION_TYPE_KEY, newRegionId);
 		newFeature.getProperties().put(SpeedRegionConsts.SOURCE_KEY, newSource);
-		return newFeature;
+		return new CreateResult(newFeature, smallestEnclosing);
 	}
 
 }

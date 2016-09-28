@@ -14,13 +14,11 @@
         isOptional="true" isReportKey="false" name="Latitude"
         sortField="NO" type="DOUBLE" useFormula="false">
         <flags>1</flags>
-        <Tag>latitude</Tag>
       </AdaptedColumn>
       <AdaptedColumn isBatchKey="false" isGroupBy="false"
         isOptional="true" isReportKey="false" name="Longitude"
         sortField="NO" type="DOUBLE" useFormula="false">
         <flags>1</flags>
-        <Tag>longitude</Tag>
       </AdaptedColumn>
       <AdaptedColumn
         description="Geometry of the object. If this is not set a point is draw at the latitude-longitude instead."
@@ -28,7 +26,6 @@
         isOptional="true" isReportKey="false" name="Geometry"
         sortField="NO" type="GEOM" useFormula="false">
         <flags>1</flags>
-        <Tag>geometry</Tag>
       </AdaptedColumn>
       <AdaptedColumn
         description="The text of this field will be shown on the map beside the point."
@@ -49,7 +46,7 @@
       </AdaptedColumn>
       <AdaptedColumn
         description="Set to less than 1 if you want the object to be partially see-through, 0 for completely invisible."
-        formula="0.3" isBatchKey="false" isGroupBy="false"
+        formula="0.2" isBatchKey="false" isGroupBy="false"
         isOptional="true" isReportKey="false" name="Opaque"
         sortField="NO" type="DOUBLE" useFormula="true">
         <flags>1</flags>
@@ -195,7 +192,7 @@
       </AdaptedColumn>
       <AdaptedColumn
         description="Set to less than 1 if you want the object to be partially see-through, 0 for completely invisible."
-        formula="0.3" isBatchKey="false" isGroupBy="false"
+        formula="0.2" isBatchKey="false" isGroupBy="false"
         isOptional="true" isReportKey="false" name="Opaque"
         sortField="NO" type="DOUBLE" useFormula="true">
         <flags>1</flags>

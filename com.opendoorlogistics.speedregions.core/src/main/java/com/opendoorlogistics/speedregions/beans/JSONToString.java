@@ -1,11 +1,11 @@
 package com.opendoorlogistics.speedregions.beans;
 
-import com.opendoorlogistics.speedregions.processor.RegionProcessorUtils;
+import com.opendoorlogistics.speedregions.TextUtils;
 
 public abstract class JSONToString {
 
 	@Override
 	public String toString(){
-		return RegionProcessorUtils.toJSON(this);
+		return TextUtils.toJSON(this);
 	}
 }

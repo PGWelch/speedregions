@@ -1,4 +1,9 @@
-package com.opendoorlogistics.speedregions.processor;
+package com.opendoorlogistics.speedregions.spatialtree;
+
+import static java.lang.Math.atan2;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static java.lang.Math.toRadians;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,6 +12,7 @@ import org.geojson.GeoJsonObject;
 import org.geojson.LngLatAlt;
 import org.geojson.MultiPolygon;
 
+import com.opendoorlogistics.speedregions.TextUtils;
 import com.opendoorlogistics.speedregions.beans.Bounds;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
 import com.vividsolutions.jts.geom.Coordinate;
@@ -18,7 +24,9 @@ import com.vividsolutions.jts.io.ParseException;
 import com.vividsolutions.jts.io.WKTReader;
 import com.vividsolutions.jts.io.WKTWriter;
 
-public class GeomConversion {
+public class GeomUtils {
+	private static final double EARTH_RADIUS_METRES = 6371000;
+
 	public static org.geojson.Polygon toGeoJSONPolygon(String wkt){
 		return toGeoJSON((Polygon)toJTS(wkt));
 //		try {
@@ -33,10 +41,10 @@ public class GeomConversion {
 	
 	public static Geometry toJTS(String wkt){
 		try {
-			WKTReader reader = new WKTReader(GeomConversion.newGeomFactory());
+			WKTReader reader = new WKTReader(GeomUtils.newGeomFactory());
 			return reader.read(wkt);		
 		} catch (ParseException e) {
-			throw RegionProcessorUtils.asUncheckedException(e);
+			throw TextUtils.asUncheckedException(e);
 		}	
 	}
 
@@ -128,7 +136,7 @@ public class GeomConversion {
 		coords[2] = new Coordinate(b.getMaxLng(), b.getMaxLat());
 		coords[3] = new Coordinate(b.getMaxLng(), b.getMinLat());
 		coords[4] = new Coordinate(b.getMinLng(), b.getMinLat());
-		return GeomConversion.newGeomFactory().createPolygon(coords);
+		return GeomUtils.newGeomFactory().createPolygon(coords);
 	}
 	
 	public static String toWKT(Geometry geometry){
@@ -215,5 +223,40 @@ public class GeomConversion {
 		GeometryFactory factory = new GeometryFactory();
 		return factory;
 	}
+
+
+	/**
+	 * See http://en.wikipedia.org/wiki/Great-circle_distance
+	 * Vincetty formula. Returns metres
+	 * @param from
+	 * @param to
+	 * @return
+	 */
+	public static double greatCircleApprox(double latFrom, double lngFrom, double latTo, double lngTo) {
+		double lat1 = toRadians(latFrom);
+		double lat2 = toRadians(latTo);
+		double lng1 = toRadians(lngFrom);
+		double lng2 = toRadians(lngTo);
+
+		double deltaLng = Math.abs(lng1 - lng2);
+
+		double a = cos(lat2) * sin(deltaLng);
+		a *= a;
+
+		double b = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(deltaLng);
+		b *= b;
+
+		double c = sin(lat1) * sin(lat2);
+
+		double d = cos(lat1) * cos(lat2) * cos(deltaLng);
+
+		double numerator = Math.sqrt(a + b);
+		double denominator = c + d;
+
+		double centralAngle = atan2(numerator, denominator);
+		double distance = EARTH_RADIUS_METRES * centralAngle;
+		return distance;
+	}
 	
+
 }

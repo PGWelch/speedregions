@@ -21,4 +21,11 @@ public class SpeedRegionConsts {
 	public static final String REGION_TYPE_KEY = "regiontype";
 	public static final String SOURCE_KEY = "source";
 	public static final double DEFAULT_MIN_CELL_LENGTH_METRES = 200;
+	public static final String COMMAND_LINE_COMPILED_FILE = "speedregions.compiled";
+	public static final String COMMAND_LINE_UNCOMPILED_FILE = "speedregions.uncompiled";
+	
+	/**
+	 * Tolerance in metres
+	 */
+	public static final String COMMAND_LINE_TOLERANCE= "speedregions.tolerance";
 }

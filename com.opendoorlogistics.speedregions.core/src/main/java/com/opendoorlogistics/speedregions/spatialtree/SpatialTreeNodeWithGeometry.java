@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.opendoorlogistics.speedregions.processor;
+package com.opendoorlogistics.speedregions.spatialtree;
 
 import com.opendoorlogistics.speedregions.beans.Bounds;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;

@@ -21,10 +21,13 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
+import org.geojson.FeatureCollection;
+
 import com.opendoorlogistics.speedregions.Examples;
-import com.opendoorlogistics.speedregions.beans.SpeedRulesFile;
-import com.opendoorlogistics.speedregions.processor.RegionProcessorUtils;
-import com.opendoorlogistics.speedregions.processor.SpeedRulesFilesProcesser;
+import com.opendoorlogistics.speedregions.SpeedRulesProcesser;
+import com.opendoorlogistics.speedregions.TextUtils;
+import com.opendoorlogistics.speedregions.beans.files.CompiledSpeedRulesFile;
+import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
 
 public class CommandLine {
 	private static final Logger LOGGER = Logger.getLogger(CommandLine.class.getName());
@@ -118,7 +121,7 @@ public class CommandLine {
 		}
 		String command = null;
 		if (nbConsecutiveMinus > 0) {
-			command = RegionProcessorUtils.stdString(arg);
+			command = TextUtils.stdString(arg);
 		}
 		return command;
 	}
@@ -127,51 +130,51 @@ public class CommandLine {
 
 		ArrayList<AbstractCommand> tmp = new ArrayList<AbstractCommand>();
 
-		tmp.add(new AbstractCommand("Load a raw rules file. Replaces existing file. Usage -l filename.", "l") {
+		tmp.add(new AbstractCommand("Load a geoJSON text file containing a feature collection. Replaces existing feature collection. Usage -l filename.", "l") {
 			
 			@Override
 			public void execute(String[] args, State state) {
 				if(args.length!=1){
 					throw new RuntimeException("Expected one argument for load command");
 				}
-				state.rules = RegionProcessorUtils.fromJSON(new File(args[0]),SpeedRulesFile.class);
+				state.featureCollection = TextUtils.fromJSON(new File(args[0]),FeatureCollection.class);
 			}
 		});
 
-		tmp.add(new AbstractCommand("Import a raw rules file. Contents are added to existing file. Usage -i filename.", "i") {
+//		tmp.add(new AbstractCommand("Import a raw rules file. Contents are added to existing file. Usage -i filename.", "i") {
+//			
+//			@Override
+//			public void execute(String[] args, State state) {
+//				if(args.length!=1){
+//					throw new RuntimeException("Expected one argument for load command");
+//				}
+//				UncompiledSpeedRulesFile newFile= TextUtils.fromJSON(new File(args[0]),UncompiledSpeedRulesFile.class);
+//				state.compiled = null;
+//				Utils.addToFile(state.featureCollections, newFile);
+//			}
+//		});
+		
+		tmp.add(new AbstractCommand("Replace existing features with example Malta features. Usage -malta.", "malta") {
+			
+			@Override
+			public void execute(String[] args, State state) {
+				state.compiled = null;
+				state.featureCollection = Examples.createMaltaFeatureCollection();
+			}
+		});
+		
+		tmp.add(new AbstractCommand("Save the geoJSON features collection. Usage -s filename.", "s") {
 			
 			@Override
 			public void execute(String[] args, State state) {
 				if(args.length!=1){
-					throw new RuntimeException("Expected one argument for load command");
+					throw new RuntimeException("Expected one argument for save command");
 				}
-				SpeedRulesFile newFile= RegionProcessorUtils.fromJSON(new File(args[0]),SpeedRulesFile.class);
-				state.compiled = null;
-				SpeedRulesFilesProcesser.addToFile(state.rules, newFile);
+				TextUtils.toJSONFile(state.featureCollection, new File(args[0]));
 			}
 		});
 		
-		tmp.add(new AbstractCommand("Add example Malta data to existing file. Usage -malta filename.", "malta") {
-			
-			@Override
-			public void execute(String[] args, State state) {
-				state.compiled = null;
-				SpeedRulesFilesProcesser.addToFile(state.rules, Examples.createMaltaExample(0.75));
-			}
-		});
-		
-		tmp.add(new AbstractCommand("Save a raw rules file. Usage -s filename.", "s") {
-			
-			@Override
-			public void execute(String[] args, State state) {
-				if(args.length!=1){
-					throw new RuntimeException("Expected one argument for load command");
-				}
-				RegionProcessorUtils.toJSONFile(state.rules, new File(args[0]));
-			}
-		});
-		
-		tmp.add(new AbstractCommand("Create compiled form of rules. Usage -c" , "c") {
+		tmp.add(new AbstractCommand("Compile features collection into the spatial tree. Usage -c" , "c") {
 			
 			@Override
 			public void execute(String[] args, State state) {
@@ -179,7 +182,7 @@ public class CommandLine {
 			}
 		});
 
-		tmp.add(new AbstractCommand("Export compiled form of rules. Trigger compile if one not done before. Usage -ec filename" , "ec") {
+		tmp.add(new AbstractCommand("Export the compiled tree as a spatial tree text file. Trigger compile if one not done before. Usage -et filename" , "et") {
 			
 			@Override
 			public void execute(String[] args, State state) {
@@ -187,12 +190,25 @@ public class CommandLine {
 					throw new RuntimeException("No filename provided");
 				}
 				state.compileIfNull();
-				RegionProcessorUtils.toJSONFile(state.compiled, new File(args[0]));
+				TextUtils.toJSONFile(state.compiled, new File(args[0]));
 				
 			}
 		});
 
-
+		tmp.add(new AbstractCommand("Export the compiled tree as an compiled rules test file. Trigger compile if one not done before. Usage -er filename" , "er") {
+			
+			@Override
+			public void execute(String[] args, State state) {
+				if(args.length==0){
+					throw new RuntimeException("No filename provided");
+				}
+				state.compileIfNull();
+				CompiledSpeedRulesFile compiledSpeedRulesFile = new CompiledSpeedRulesFile();
+				compiledSpeedRulesFile.setTree(state.compiled);
+				TextUtils.toJSONFile(compiledSpeedRulesFile, new File(args[0]));
+				
+			}
+		});
 		tmp.add(new AbstractCommand("Export an Excel file for visualisation in ODL Studio. Trigger compile if one not done before. Usage -odl filename" , "odl") {
 			
 			@Override
@@ -201,7 +217,7 @@ public class CommandLine {
 					throw new RuntimeException("No filename provided");
 				}
 				state.compileIfNull();
-				RegionProcessorUtils.toJSONFile(state.compiled, new File(args[0]));
+				TextUtils.toJSONFile(state.compiled, new File(args[0]));
 				new ExcelWriter().exportState(state, new File(args[0]));
 			}
 		});
@@ -248,7 +264,7 @@ public class CommandLine {
 		Map<String,AbstractCommand> ret =new TreeMap<>();		
 		for (AbstractCommand c : tmp) {
 			for (String kw : c.getKeywords()) {
-				ret.put(RegionProcessorUtils.stdString(kw), c);
+				ret.put(TextUtils.stdString(kw), c);
 
 			}
 		}

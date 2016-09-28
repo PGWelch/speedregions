@@ -15,12 +15,18 @@
  */
 package com.opendoorlogistics.speedregions.commandline;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
-import com.opendoorlogistics.speedregions.SpeedRegionCompiler;
+import org.geojson.FeatureCollection;
+
 import com.opendoorlogistics.speedregions.SpeedRegionConsts;
-import com.opendoorlogistics.speedregions.beans.CompiledSpeedRegions;
-import com.opendoorlogistics.speedregions.beans.SpeedRulesFile;
+import com.opendoorlogistics.speedregions.SpeedRegionLookupBuilder;
+import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
+import com.opendoorlogistics.speedregions.beans.files.CompiledSpeedRulesFile;
+import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
+import com.opendoorlogistics.speedregions.spatialtree.TreeBuilder;
 
 /*
  * Copyright 2016 Open Door Logistics Ltd
@@ -38,12 +44,12 @@ import com.opendoorlogistics.speedregions.beans.SpeedRulesFile;
  * limitations under the License.
  */
 public class State {
-	SpeedRulesFile rules = new SpeedRulesFile();
-	CompiledSpeedRegions compiled;
+	FeatureCollection featureCollection = new FeatureCollection();
+	SpatialTreeNode compiled;
 	double minCellLength = SpeedRegionConsts.DEFAULT_MIN_CELL_LENGTH_METRES;
 	
 	void compile(){
-		compiled = SpeedRegionCompiler.buildBeanFromSpeedRulesObjs(Arrays.asList(rules), minCellLength);		
+		compiled = TreeBuilder.build(featureCollection, minCellLength);		
 	}
 	
 	void compileIfNull(){

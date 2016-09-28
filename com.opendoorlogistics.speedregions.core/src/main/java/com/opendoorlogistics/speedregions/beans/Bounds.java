@@ -16,7 +16,7 @@
 package com.opendoorlogistics.speedregions.beans;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.opendoorlogistics.speedregions.processor.RegionProcessorUtils;
+import com.opendoorlogistics.speedregions.TextUtils;
 import com.vividsolutions.jts.geom.Envelope;
 
 /**
@@ -81,7 +81,7 @@ public class Bounds extends JSONToString{
 	
 	@Override
 	public String toString() {
-		return RegionProcessorUtils.toJSON(this);
+		return TextUtils.toJSON(this);
 	}
 
 	@JsonIgnore

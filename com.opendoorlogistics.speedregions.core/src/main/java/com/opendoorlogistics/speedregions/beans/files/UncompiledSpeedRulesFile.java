@@ -13,23 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.opendoorlogistics.speedregions.beans;
-
-import java.util.ArrayList;
-import java.util.List;
+package com.opendoorlogistics.speedregions.beans.files;
 
 import org.geojson.FeatureCollection;
 
-public class SpeedRulesFile extends JSONToString{
-	private List<SpeedRule> rules = new ArrayList<SpeedRule>();
+/**
+ * Speed rules and a geoJSON feature collection of polygons and multipolygons.
+ * @author Phil
+ *
+ */
+public class UncompiledSpeedRulesFile extends AbstractSpeedRulesFile{
 	private FeatureCollection geoJson = new FeatureCollection();
-
-	public List<SpeedRule> getRules() {
-		return rules;
-	}
-	public void setRules(List<SpeedRule> rules) {
-		this.rules = rules;
-	}
 
 	public FeatureCollection getGeoJson() {
 		return geoJson;

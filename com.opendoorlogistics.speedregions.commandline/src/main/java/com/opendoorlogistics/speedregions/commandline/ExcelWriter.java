@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -30,15 +31,24 @@ import org.geojson.Feature;
 
 import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatTypes;
 import com.opendoorlogistics.speedregions.SpeedRegionConsts;
+import com.opendoorlogistics.speedregions.TextUtils;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
-import com.opendoorlogistics.speedregions.processor.GeomConversion;
-import com.opendoorlogistics.speedregions.processor.RegionProcessorUtils;
-import com.vividsolutions.jts.geom.Geometry;
+import com.opendoorlogistics.speedregions.spatialtree.GeomUtils;
 
 public class ExcelWriter {
 	
 	private static void writeToCell(String value, JsonFormatTypes type, Cell cell) {
-		cell.setCellValue(value);
+		
+		if(type == JsonFormatTypes.STRING){
+			// HACK... POI is giving an exception when we try to write cells greater than
+			// the Excel 2007 max length. However we don't care about this if we're just viewing
+			// the results in ODL Studio, so we bypass the check for max cell length.
+			XSSFCell hack = (XSSFCell)cell;
+			hack.getCTCell().setV(value);
+		}else{
+			cell.setCellValue(value);			
+		}
+		
 		if (value != null) {
 			boolean setToString = true;
 			if (value.length() > 0 && (type == JsonFormatTypes.NUMBER || type == JsonFormatTypes.INTEGER)) {
@@ -193,13 +203,13 @@ public class ExcelWriter {
 		polygons.getHeader().add(new ExportTableColumn(SpeedRegionConsts.SOURCE_KEY, JsonFormatTypes.STRING));
 		polygons.getHeader().add(new ExportTableColumn("Geom", JsonFormatTypes.STRING));
 		int i =0 ;
-		for(Feature feature : state.rules.getGeoJson().getFeatures()){
+		for(Feature feature : state.featureCollection.getFeatures()){
 			List<String> row = new ArrayList<>();
 			row.add(Integer.toString(i++));
-			row.add(RegionProcessorUtils.findRegionType(feature));
-			row.add(RegionProcessorUtils.findProperty(feature, SpeedRegionConsts.SOURCE_KEY));
+			row.add(TextUtils.findRegionType(feature));
+			row.add(TextUtils.findProperty(feature, SpeedRegionConsts.SOURCE_KEY));
 			if(feature.getGeometry()!=null){
-				row.add(GeomConversion.toWKT(GeomConversion.toJTS(GeomConversion.newGeomFactory(), feature.getGeometry())));				
+				row.add(GeomUtils.toWKT(GeomUtils.toJTS(GeomUtils.newGeomFactory(), feature.getGeometry())));				
 			}
 			polygons.getRows().add(row);
 		}
@@ -221,7 +231,7 @@ public class ExcelWriter {
 					row.add(Integer.toString(i++));
 					row.add(n.getRegionType());
 					row.add(Long.toString(n.getAssignedPriority()));
-					row.add(GeomConversion.toWKT(GeomConversion.toJTS(n.getBounds())));
+					row.add(GeomUtils.toWKT(GeomUtils.toJTS(n.getBounds())));
 				}
 				for(SpatialTreeNode child:n.getChildren()){
 					recurse(child);
@@ -231,7 +241,7 @@ public class ExcelWriter {
 		}
 		Recurser recurser = new Recurser();
 		if(state.compiled!=null){
-			recurser.recurse(state.compiled.getQuadtree());
+			recurser.recurse(state.compiled);
 		}
 		
 		writeSheets(file, polygons,tree);

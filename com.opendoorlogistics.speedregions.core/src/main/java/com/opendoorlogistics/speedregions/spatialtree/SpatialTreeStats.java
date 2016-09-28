@@ -1,4 +1,4 @@
-package com.opendoorlogistics.speedregions.processor;
+package com.opendoorlogistics.speedregions.spatialtree;
 
 import java.util.HashSet;
 import java.util.TreeMap;

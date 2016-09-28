@@ -1,8 +1,6 @@
 package com.opendoorlogistics.speedregions.graphhopper;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import com.graphhopper.GraphHopper;
 import com.graphhopper.reader.OSMWay;
@@ -12,16 +10,12 @@ import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.util.CmdArgs;
 import com.graphhopper.util.PMap;
 import com.graphhopper.util.shapes.GHPoint;
-import com.opendoorlogistics.speedregions.Examples;
-import com.opendoorlogistics.speedregions.SpeedRegionCompiler;
 import com.opendoorlogistics.speedregions.SpeedRegionLookup;
 import com.opendoorlogistics.speedregions.SpeedRegionLookup.SpeedRuleLookup;
 import com.opendoorlogistics.speedregions.SpeedRegionLookupBuilder;
-import com.opendoorlogistics.speedregions.beans.CompiledSpeedRegions;
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
-import com.opendoorlogistics.speedregions.beans.SpeedRulesFile;
 import com.opendoorlogistics.speedregions.beans.SpeedUnit;
-import com.opendoorlogistics.speedregions.processor.GeomConversion;
+import com.opendoorlogistics.speedregions.spatialtree.GeomUtils;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Point;
 
@@ -29,28 +23,25 @@ import com.vividsolutions.jts.geom.Point;
  * A temporary hack to use speed regions with graphhopper 0.5.
  *
  */
-public class HackBuildSpeedRegionsForCarWithGH05 {
-
-	public static void main(String[] strArgs) throws Exception {
-		System.out.println("Run dir is " + new File("").getAbsolutePath());
-		SpeedRulesFile rules = Examples.createMaltaExample(0.2);
-		CompiledSpeedRegions rlb = SpeedRegionCompiler.buildBeanFromSpeedRulesObjs(Arrays.asList(rules), 200);		
-		SpeedRegionLookup lookup = SpeedRegionLookupBuilder.convertFromCompiled(rlb);
-		
-		strArgs = new String[]{
-			"config=config.properties",
-			"osmreader.osm=malta-latest.osm.pbf"				
-		};
-				
+public class ExperimentalUseSpeedRegionsWithCarGH05 {
+	
+	/**
+	 * A temporary hack to use speed regions pending proper integration into Graphhopper
+	 * 
+	 * Example args:
+	 * config=config.properties osmreader.osm=malta-latest.osm.pbf speedregions.compiled=compiled.json
+	 *
+	 */
+	public static void main(String[] strArgs) throws Exception {	
 		CmdArgs args = CmdArgs.read(strArgs);
+		SpeedRegionLookup lookup = SpeedRegionLookupBuilder.loadFromCommandLineParameters(args.toMap());
 		args = CmdArgs.readFromConfigAndMerge(args, "config", "graphhopper.config");
 		GraphHopper hopper = new GraphHopper().forDesktop().init(args);
 
 		String flagEncoders = args.get("graph.flagEncoders", "");
 		int bytesForFlags = args.getInt("graph.bytesForFlags", 4);
 		String[] splitEncoders = flagEncoders.split(",");
-
-	//	SpeedRegionLookup lookup = null;
+		
 		ArrayList<AbstractFlagEncoder> encoders = new ArrayList<>();
 		for (String encoder : splitEncoders) {
 			String propertiesString = "";
@@ -86,7 +77,7 @@ public class HackBuildSpeedRegionsForCarWithGH05 {
 				// latest Graphhopper core.
 				GHPoint estmCentre = way.getTag("estimated_center", null);
 				if (estmCentre != null) {
-					Point point = GeomConversion.newGeomFactory().createPoint(new Coordinate(estmCentre.lon, estmCentre.lat));
+					Point point = GeomUtils.newGeomFactory().createPoint(new Coordinate(estmCentre.lon, estmCentre.lat));
 					String regionId = lookup.findRegionType(point);
 					way.setTag("speed_region_id", regionId);
 				}

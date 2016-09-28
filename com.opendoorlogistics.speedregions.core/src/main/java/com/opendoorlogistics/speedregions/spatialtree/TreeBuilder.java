@@ -13,27 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.opendoorlogistics.speedregions.processor;
+package com.opendoorlogistics.speedregions.spatialtree;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TreeSet;
 
+import org.geojson.Feature;
+import org.geojson.FeatureCollection;
+
+import com.opendoorlogistics.speedregions.SpeedRegionConsts;
+import com.opendoorlogistics.speedregions.TextUtils;
 import com.opendoorlogistics.speedregions.beans.Bounds;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
+import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Polygon;
 
-class RegionSpatialTreeBuilder {
+public class TreeBuilder {
 	private final static double MIN_SIDES_RATIO = 0.25;
 	private final GeometryFactory geomFactory;
 	private final SpatialTreeNodeWithGeometry root;
 	private final double minLengthMetres;
 	private long nextPolygonPriority = 1;
 
-	public RegionSpatialTreeBuilder(GeometryFactory geomFactory, double minSideLengthMetres) {
+	private TreeBuilder(GeometryFactory geomFactory, double minSideLengthMetres) {
 		this.geomFactory = geomFactory;
 		this.root = SpatialTreeNodeWithGeometry.createGlobal(geomFactory);
 		this.minLengthMetres = minSideLengthMetres;
@@ -78,7 +86,7 @@ class RegionSpatialTreeBuilder {
 	
 	private double getWidthMetres(Bounds b) {
 		double dLatCentre = getLatCentre(b);
-		double width = RegionProcessorUtils.greatCircleApprox(dLatCentre, b.getMinLng(), dLatCentre, b.getMaxLng());
+		double width = GeomUtils.greatCircleApprox(dLatCentre, b.getMinLng(), dLatCentre, b.getMaxLng());
 		return width;
 	}
 	
@@ -90,7 +98,7 @@ class RegionSpatialTreeBuilder {
 
 	private double getHeightMetres(Bounds b) {
 		double dLngCentre = getLngCentre(b);
-		double height = RegionProcessorUtils.greatCircleApprox(b.getMinLat(), dLngCentre, b.getMaxLat(), dLngCentre);
+		double height = GeomUtils.greatCircleApprox(b.getMinLat(), dLngCentre, b.getMaxLat(), dLngCentre);
 		return height;
 	}
 	
@@ -130,10 +138,6 @@ class RegionSpatialTreeBuilder {
 //		return true;
 //	}
 
-	public synchronized void add(Polygon geometry, String id) {
-		addRecursively(root, 0, new QueryGeometry(geometry, id));
-		nextPolygonPriority++;
-	}
 
 	
 
@@ -403,10 +407,125 @@ class RegionSpatialTreeBuilder {
 		return dLngCentre;
 	}
 
-	public synchronized SpatialTreeNode build() {
+	private synchronized SpatialTreeNode finishBuilding() {
 		// deep copy without the extra builder fields (i.e. so use the base bean class)
 		SpatialTreeNode ret = new SpatialTreeNode(root);
 		recurseFinaliseNode(ret);
 		return ret;
 	}
+
+	public static SpatialTreeNode build(FeatureCollection fc, double minDiagonalLengthMetres) {
+		return build(Arrays.asList(fc), minDiagonalLengthMetres);
+	}
+
+	/**
+	 * Build the spatial tree, giving priority to polygons based on their order within each feature collection.
+	 * @param featureCollections
+	 * @param minDiagonalLengthMetres
+	 * @return
+	 */
+	public static SpatialTreeNode build(List<FeatureCollection> featureCollections, double minDiagonalLengthMetres) {
+		GeometryFactory geomFactory = GeomUtils.newGeomFactory();
+		TreeSet<TempPolygonRecord> prioritised = prioritisePolygons(featureCollections);
+
+		TreeBuilder builder = new TreeBuilder(geomFactory, minDiagonalLengthMetres);
+		for (TempPolygonRecord poly : prioritised) {
+			com.vividsolutions.jts.geom.Polygon jtsPolygon = GeomUtils.toJTS(geomFactory, poly.polygon);
+			builder.addRecursively(builder.root, 0, new QueryGeometry(jtsPolygon, poly.stdRegionType));
+			builder.nextPolygonPriority++;			
+			//builder.add(jtsPolygon, poly.stdRegionType);
+		}
+
+		return builder.finishBuilding();
+	}
+	
+	private static class TempPolygonRecord implements Comparable<TempPolygonRecord> {
+		int fileIndex;
+		int positionInFile;
+		org.geojson.Polygon polygon;
+		String stdRegionType;
+		long polyNumber;
+
+		TempPolygonRecord(int fileIndex, int positionInFile, org.geojson.Polygon polygon, String stdRegionType,
+				long uniquePolyNumber) {
+			this.fileIndex = fileIndex;
+			this.positionInFile = positionInFile;
+			this.polygon = polygon;
+			this.stdRegionType = stdRegionType;
+			this.polyNumber = uniquePolyNumber;
+		}
+
+		public int compareTo(TempPolygonRecord o) {
+			// first positions in files first
+			int diff = Integer.compare(positionInFile, o.positionInFile);
+
+			// then files
+			if (diff == 0) {
+				diff = Integer.compare(fileIndex, o.fileIndex);
+			}
+
+			// then global polygon just to ensure we always add to the treeset
+			if (diff == 0) {
+				diff = Long.compare(polyNumber, o.polyNumber);
+			}
+
+			return diff;
+		}
+
+	}
+
+
+	private static TreeSet<TempPolygonRecord> prioritisePolygons(List<FeatureCollection> files) {
+
+		// prioritise all polygons and link them up to the local rules in their files
+		int nfiles = files.size();
+		TreeSet<TempPolygonRecord> prioritisedPolygons = new TreeSet<TempPolygonRecord>();
+		for (int ifile = 0; ifile < nfiles; ifile++) {
+			FeatureCollection fc= files.get(ifile);
+			if (fc != null) {
+				int nfeatures = fc.getFeatures().size();
+				for (int iFeat = 0; iFeat < nfeatures; iFeat++) {
+					Feature feature = fc.getFeatures().get(iFeat);
+					String regionType = TextUtils.findRegionType(feature);
+
+					if (regionType == null) {
+						throw new RuntimeException("Found record without a " + SpeedRegionConsts.REGION_TYPE_KEY + " property");
+					}
+
+					if (regionType.trim().length() == 0) {
+						throw new RuntimeException("Found record with an empty " + SpeedRegionConsts.REGION_TYPE_KEY + " property");
+					}
+
+					regionType = TextUtils.stdString(regionType);
+
+					// if (stdRegionIds.contains(regionId)) {
+					// throw new RuntimeException(
+					// "RegionId " + regionId + " was found in more than one feature. RegionIds should be unique."
+					// + " Use a multipolygon if you want a region spanning several polygons.");
+					// }
+					// stdRegionIds.add(regionId);
+
+					if (feature.getGeometry() == null) {
+						throw new RuntimeException("Found feature without geometry");
+					}
+
+					if (GeomUtils.isGeoJSONPoly(feature.getGeometry())) {
+						prioritisedPolygons.add(new TempPolygonRecord(ifile, iFeat, (org.geojson.Polygon) feature.getGeometry(), regionType, prioritisedPolygons.size()));
+					} else if (GeomUtils.isGeoJSONMultiPoly(feature.getGeometry())) {
+						for (org.geojson.Polygon polygon : GeomUtils.toGeoJSONPolygonList((org.geojson.MultiPolygon) feature.getGeometry())) {
+							prioritisedPolygons.add(new TempPolygonRecord(ifile, iFeat, polygon, regionType,
+									prioritisedPolygons.size()));
+						}
+
+					} else {
+						throw new RuntimeException("Found feature with non-polygon geometry type");
+					}
+
+				}
+			}
+		}
+
+		return prioritisedPolygons;
+	}
+
 }
