@@ -7,10 +7,10 @@
 	<packaging>pom</packaging>
 
 	<modules>
-        <module>com.opendoorlogistics.speedregions.core</module>
-        <module>com.opendoorlogistics.speedregions.commandline</module>
-        <module>com.opendoorlogistics.speedregions.experimental.gh0.5</module>
-        <module>com.opendoorlogistics.speedregions.experimental.ghlatest</module>
+        <module>speedregions.core</module>
+        <module>speedregions.commandline</module>
+        <module>experimental.gh0.5</module>
+        <module>experimental.ghlatest</module>
     </modules>
 
 
