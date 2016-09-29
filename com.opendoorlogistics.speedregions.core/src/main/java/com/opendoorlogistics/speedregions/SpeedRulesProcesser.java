@@ -126,26 +126,25 @@ public class SpeedRulesProcesser {
 			String parentId = rule.getParentId();
 			while(parentId!=null){
 				
-				// standardise parent string and find parent (should alrewady be validated so should exist)
+				// standardise parent string and find parent (should already be validated so should exist)
 				parentId = TextUtils.stdString(parentId);
 				SpeedRule originalParent = originalRules.get(parentId);
-				
 	
-				// combine speeds by type, including our multiplier
+				// combine speeds by type, including our current multiplier
 				if(originalParent.getSpeedsByRoadType()!=null){
 					for(Map.Entry<String, Float> entry : originalParent.getSpeedsByRoadType().entrySet()){
 						String type = entry.getKey();
 						type = TextUtils.stdString(type);
 						if(!rule.getSpeedsByRoadType().containsKey(type)){
-							double parentSpeed = entry.getValue();
-							double childUnitSpeed = SpeedUnit.convert(parentSpeed, originalParent.getSpeedUnit(), rule.getSpeedUnit());
-							double postMultiplier = childUnitSpeed * rule.getMultiplier();
-							rule.getSpeedsByRoadType().put(type,(float)postMultiplier);
+							double parentSpeedInParentUnits = entry.getValue();
+							double parentSpeedInChildUnits = SpeedUnit.convert(parentSpeedInParentUnits, originalParent.getSpeedUnit(), rule.getSpeedUnit());
+							double childSpeed= parentSpeedInChildUnits * rule.getMultiplier();
+							rule.getSpeedsByRoadType().put(type,(float)childSpeed);
 						}
 					}					
 				}
 	
-				// finally update the multiplier for roads without a matching type
+				// update multiplier with the parent multiplier
 				rule.setMultiplier(rule.getMultiplier() * originalParent.getMultiplier());
 				
 				// go to next parent

@@ -35,11 +35,11 @@ public enum SpeedUnit{
 			return value;
 		}
 		if(to == SpeedUnit.KM_PER_HOUR){
-			// must be in miles
+			// original must be in miles
 			return value * 1.60934;
 		}
 		else{
-			// must be in km
+			// original must be in km
 			return value / (1.60934);
 		}
 	}

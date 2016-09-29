@@ -159,7 +159,7 @@ public class CommandLine {
 			@Override
 			public void execute(String[] args, State state) {
 				state.compiled = null;
-				state.featureCollection = Examples.createMaltaFeatureCollection();
+				state.featureCollection = Examples.createMaltaSingleFeatureCollection();
 			}
 		});
 		

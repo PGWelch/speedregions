@@ -62,7 +62,7 @@ public class Examples {
 
 		UncompiledSpeedRulesFile rules = new UncompiledSpeedRulesFile();
 		//rules.setCountryCode("mt");
-		rules.setGeoJson(createMaltaFeatureCollection());
+		rules.setGeoJson(createMaltaSingleFeatureCollection());
 
 		SpeedRule rule = new SpeedRule();
 		rule.getMatchRule().getFlagEncoders().add("car");
@@ -72,7 +72,7 @@ public class Examples {
 		return rules;
 	}
 
-	public static FeatureCollection createMaltaFeatureCollection(){
+	public static FeatureCollection createMaltaSingleFeatureCollection(){
 		Feature feature = new Feature();
 		feature.setProperty(SpeedRegionConsts.REGION_TYPE_KEY, "valleta");
 		org.geojson.Polygon geoJSONPolygon = GeomUtils.toGeoJSONPolygon(CENTRAL_MALTA_POLYGON);

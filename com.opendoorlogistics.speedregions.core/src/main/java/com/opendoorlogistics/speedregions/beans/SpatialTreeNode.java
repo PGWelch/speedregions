@@ -119,4 +119,13 @@ public class SpatialTreeNode extends JSONToString{
 	public static SpatialTreeNode fromJSON(String json) {
 		return TextUtils.fromJSON(json, SpatialTreeNode.class);
 	}
+	
+	@JsonIgnore
+	public long countNodes(){
+		long ret=1;
+		for(SpatialTreeNode child:children){
+			ret += child.countNodes();
+		}
+		return ret;
+	}
 }

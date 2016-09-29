@@ -15,7 +15,6 @@ import com.opendoorlogistics.speedregions.SpeedRegionLookup;
 import com.opendoorlogistics.speedregions.SpeedRegionLookup.SpeedRuleLookup;
 import com.opendoorlogistics.speedregions.SpeedRegionLookupBuilder;
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
-import com.opendoorlogistics.speedregions.beans.SpeedUnit;
 import com.opendoorlogistics.speedregions.spatialtree.GeomUtils;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Point;
@@ -37,10 +36,7 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 	public static void main(String[] strArgs) throws Exception {	
 		CmdArgs args = CmdArgs.read(strArgs);
 		
-		// override the speed storage to give some more accuracy in storing speeds
-		args.put("speedBits", 8);
-		args.put("speedFactor", 1);
-	                
+	
 		String debugExportFile= args.get("debugexport", null);
 		if(debugExportFile!=null){
 			debugExportSpeeds = new DebugExportSpeeds(new File(debugExportFile));
@@ -73,7 +69,11 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 				encoder = encoder.split("\\|")[0];
 			}
 			PMap configuration = new PMap(propertiesString);
-
+			
+//			// override the speed storage to give some more accuracy in storing speeds
+//			configuration.put("speedBits", 8);
+//			configuration.put("speedFactor", 1);
+		
 			if (encoder.equals(EncodingManager.CAR)) {
 				encoders.add(newCarFlagEncoder(configuration, lookup));
 			} else {
@@ -90,7 +90,7 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 	}
 
 	private static CarFlagEncoder newCarFlagEncoder(PMap config, final SpeedRegionLookup lookup) {
-		final SpeedRuleLookup rules = lookup.createLookupForEncoder(EncodingManager.CAR);
+		final SpeedRuleLookup rules = lookup!=null ? lookup.createLookupForEncoder(EncodingManager.CAR):null;
 
 		return new CarFlagEncoder(config) {
 
@@ -100,7 +100,7 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 				// Set the speed region tag. This should probably be done in OSMReader instead when we integrate into
 				// latest Graphhopper core.
 				GHPoint estmCentre = way.getTag("estimated_center", null);
-				if (estmCentre != null) {
+				if (estmCentre != null && lookup!=null) {
 					Point point = GeomUtils.newGeomFactory().createPoint(new Coordinate(estmCentre.lon, estmCentre.lat));
 					String regionId = lookup.findRegionType(point);
 					way.setTag("speed_region_id", regionId);
@@ -114,57 +114,38 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 				return val;
 			}
 
-			private SpeedRule getSpeedRule(OSMWay way) {
-				SpeedRule rule = null;
-				String regionId = way.getTag("speed_region_id");
-				if (regionId != null) {
-					rule = rules.getSpeedRule(regionId);
+			@Override
+			protected double getSpeed(OSMWay way) {
+				
+				// get the default Graphhopper speed and whether we used the maxspeed tag
+				String highwayValue = way.getTag("highway");
+				double speed= super.getSpeed(way);
+		        double maxSpeed = getMaxSpeed(way);
+		        boolean useMaxSpeed = maxSpeed>=0;
+		        if (useMaxSpeed){
+		        	speed = maxSpeed *0.9;
+		        }
+
+		        // apply the rule
+				String regionId = way.getTag("speed_region_id");	
+				if (regionId != null && rules!=null) {
+					SpeedRule rule = rules.getSpeedRule(regionId);
 					if (rule == null) {
 						// TODO Should this be fatal? If someone misspelled a regionid you wouldn't want a silent fail.
 						// However it may be valid to have regions without a defined rule for certain encoders?
 						throw new RuntimeException(
-								"Cannot find speed rule for region with id " + regionId + " and encoder " + EncodingManager.CAR);
+								"Cannot find speed rule for region with id " + regionId + " and encoder " +EncodingManager.CAR);
 					}
+					speed= rule.applyRule(highwayValue, speed,useMaxSpeed);					
 				}
-				return rule;
-			}
 
-			@Override
-			protected double getSpeed(OSMWay way) {
-				
-				SpeedRule rule = getSpeedRule(way);
-				String highwayValue = way.getTag("highway");
-				double speed = super.getSpeed(way);
-				if(rule!=null){
-					return rule.applyRule(highwayValue, speed);
-				}
 				return speed;
-
-//				if (rule != null) {
-//					Float speed = rule.getSpeedsByRoadType().get(highwayValue);
-//					if (speed != null) {
-//						return SpeedUnit.convert(speed, rule.getSpeedUnit(), SpeedUnit.KM_PER_HOUR);
-//					}
-//				}
-//
-//				// If no rule set, use the superclass logic and apply the multiplier
-//				double speed = super.getSpeed(way);
-//				if (rule != null) {
-//					speed *= rule.getMultiplier();
-//				}
-//
-//				return speed;
 			}
 
 			@Override
 			protected double applyMaxSpeed(OSMWay way, double speed, boolean force) {
-				// don't force using the max speed tag if we have a speed rule?
-				SpeedRule rule = getSpeedRule(way);
-				if (rule != null) {
-					force = false;
-				}
-
-				return super.applyMaxSpeed(way, speed, force);
+				// max speed already handled in getSpeed...
+				return speed;
 			}
 
 		};

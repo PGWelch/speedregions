@@ -1,7 +1,7 @@
 # SpeedRegions
 SpeedRegions is a work-in-progress utility library designed for use with [Graphhopper](https://github.com/graphhopper/graphhopper)
-which allows geographic regions with different speed profiles (e.g. city, country) to be defined. 
-SpeedRegions uses several types of text files containing data in JSON format as its input.
+which allows geographic regions with different speed profiles (e.g. a city or a country) to be defined. 
+SpeedRegions uses several types of text files containing data in [JSON](https://en.wikipedia.org/wiki/JSON) format as its input.
 The most important text file type is an *UncompiledSpeedRules* file. Here's an example file:
 
 	{
@@ -27,31 +27,41 @@ The most important text file type is an *UncompiledSpeedRules* file. Here's an e
 	  }
 	}
 
-This file defines a region around the city of Valleta, in Malta 
-and a rule which applies to the Graphhopper car flag encoder (i.e. the speed profile for cars)
-and slows down speeds by 30% (multiplier = 0.7) within Valleta.
+This file has two sections - (1) the array called *rules*, which contains a single speed rule and 
+(2) the object geoJson, which must always be a [geoJson feature collection](http://geojson.org/geojson-spec.html#feature-collection-objects).
+This feature collection contains a single feature which defines a region around the city of Valleta, in Malta. 
+The single speed rule applies to the Graphhopper car flag encoder (i.e. the speed profile for cars)
+and slows down speeds by 30% (multiplier = 0.7) within Valleta. 
+The *regionType* field links the Valleta geoJson feature with the speed rule - so different speed rules can
+be applied to the same geographic region (for example, different speed rules for a truck or motorbike).
 
-## Compiled vs uncompiled
+## Compiled vs uncompiled files
 An uncompiled file is called 'uncompiled' because the SpeedRegions library still needs to build a spatial lookup
 (a kind of map) which stores the geographic regions in a data structure optimised for querying the region a road
 sits within. 
-Building this spatial lookup can be slow - e.g. a couple of minutes just for the United Kingdom dependent on accuracy.
+Building this spatial lookup can be slow and take a similar amount of time to building the graph - e.g. a couple of minutes just for the United Kingdom dependent on accuracy.
 As speed rules will change often (e.g. make a road type a little faster or slower) but the geographic regions won't
 change as often, we support pre-compiling this spatial tree before using it in Graphhopper. 
 You can therefore compile the spatial tree once and then quickly modify the speed rules in the compiled file without
 having to recompile the tree. 
 
 ## Types of JSON text file
-SpeedRegions can use several different types of JSON text files:
+When building the Graphhopper graph, you can give SpeedRegions one of two different types of JSON text files:
 
 1. **UncompiledSpeedRules**. A JSON text file containing the speed rules and GeoJSON feature collection.
 1. **CompiledSpeedRules**. A JSON text file containing the speed rules and the built spatial tree.
-1. **FeatureCollection**. A GeoJSON text file containing a single feature collection.
+
+To help manipulate these files, we have a command line tools project. 
+The command line tools loads and saves the following JSON file types:
+
+1. **FeatureCollection**. A GeoJSON text file containing a single feature collection object.
 1. **CompiledTree**. A JSON text file the containing built spatial tree.
 
 You can use the command line tools to build the *CompiledTree* file from a *FeatureCollection* file. 
-You build this tree once and then place it into a *CompiledSpeedRules* file. 
-You then tweak the speed rules in the *CompiledSpeedRules* as you like, without rebuilding the tree again.
+You build this tree once (and once only), then place it into a *CompiledSpeedRules* file. 
+You can then tweak the speed rules in the *CompiledSpeedRules* as you like, without rebuilding the tree again.
+Alternatively if you don't mind the extra time taken to rebuild the spatial tree when you're building the Graphhopper
+graph, you can just use the *UncompiledSpeedRules* file as input without bothering with the other file types.
 
 This is an example *CompiledSpeedRules* file:
 
@@ -79,9 +89,10 @@ This is an example *CompiledSpeedRules* file:
 	}
 
 In this case the tree is very small - it contains only one node. 
-Generally speaking the tree will be a very large multi-level data structure.
+Generally speaking the tree will be a very large multi-level data structure with thousands or more nodes.
+
 This is an example *FeatureCollection* file 
-- it is pure geoJson and corresponds to the *geoJson* field in the UncompiledSpeedRules file:
+- it is pure geoJson and corresponds to the *geoJson* field in the *UncompiledSpeedRules* file:
 
 	{
 		"type" : "FeatureCollection",
@@ -97,7 +108,7 @@ This is an example *FeatureCollection* file
 		} ]
 	}
 
-This is our example *CompiledTree* file; it corresponds to the *tree* field in the *CompiledSpeedRules* file:
+This is our example *CompiledTree* file, containing only a single node; it corresponds to the *tree* field in the *CompiledSpeedRules* file:
 
 	{
 		"bounds" : {
@@ -111,59 +122,25 @@ This is our example *CompiledTree* file; it corresponds to the *tree* field in t
 		"children" : [ ]
 	}
 
-## FeatureCollection format
-A featureCollection should only contain Polygon or MultiPolygon geometry types.
-Each feature should have a **regiontype** property which links to the speed rules.
-RegionType could refer to a geographic area - e.g. London - or a type of geographic area (e.g. 'big city').
-Multiple features can therefore have the same regionType, there is no requirement for it to be a unique value.
+## Configuration of speed rules data
+You can have as many speed rules as you like in the rules array.
+Each speed rule can define a speed for a road type and a speed multiplier which is applied to a road type when either 
+(a) no speed is specified in the rule for the road type or 
+(b) the OSM *maxspeed* tag was present on the road edge and was used instead of the default speed for the road type.
+The speeds for road types can be set in MILES_PER_HOUR or KM_PER_HOUR depending on the value of the *speedUnit* field.
 
-The order of a feature in the featureCollection is used as its priority when assigning an area (technically a leaf node
-in the spatial tree) to a region.
-If, for example, you have a featureCollection containing polygons for United Kingdom, Central London and Outer London,
-your first feature should be the smallest - Central London - followed by Outer London (which Central London sits within)
-and then the United Kingdom. 
-The order within the collection is therefore used to model overlapping polygons where one polygon sits within another.
-	
-## Using with Graphhopper
-The integration with Graphhopper is currently experimental and available for car speed profile only.
-Full integration within the Graphhopper project is planned.
-See the projects com.opendoorlogistics.speedregions.experimental.gh0.5 and com.opendoorlogistics.speedregions.experimental.ghlatest
-to build a car profile graph using speed regions with Graphhopper 0.5 and Graphhopper latest release (version 0.7 as of 28/9/2016).
+Speed rules can have a parent-child hierarchy, where you specify a default set of speeds for an area,
+for example a country, and give the rule containing these speeds an id.
+Child rules can inherit the default speeds and multiplier from their parent rule if you set their parentId field,
+and then override the speeds as needed. 
+A child rule multiplies its parent's speeds by its *multiplier* field value.
 
-To build a Graphhopper graph using speed regions, build the project using Maven and run from the command line as shown [here](http://www.opendoorlogistics.com/tutorials/tutorial-vi-advance-configuration/building-road-network-graphs/)
-but with one of two sets of additional command line arguments:
-
-* Using an UncompiledSpeedRules file. Add the argument:
-
-		speedregions.compiled=your_compiled_speed_rules_filename
-
-* Using a CompiledSpeedRules file. Add the two arguments:
-
-		speedregions.uncompiled=your_compiled_speed_rules_filename
-		speedregions.tolerance=tolerance_in_metres
-	
-## Choosing the tolerance value
-The tolerance measures how accurate the spatial tree will be.
-Technically speaking, the spatial tree divides the world up into rectangles, assigning each rectangle to a single region.
-The tolerance is the minimum side length of these rectangles; so no rectangle will be created with a side length less
-than tolerance_in_metres.
-
-Road edges whose centre is within *tolerance_in_metres* of a region boundary may therefore be placed in the wrong region.
-Generally speaking, the effects of placing an edge already near a region boundary within the wrong region 
-will be small, so tolerance can be a relatively high value.
-The tolerance value should however be signficantly smaller than the approximate width or height of your regions,
-or your regions will not be represented properly or not even used.
-The building of the spatial tree (i.e. the compilation step) takes a lot longer the smaller the tolerance is
-and the compiled files will be a lot larger.
-
-We recommend using a starting value of 1000m and only reducing this if needed.
-
-## Speed rules configuration
 The following *CompiledSpeedRules* example sets up speeds in MILES_PER_HOUR for different types
-of roads in the UK, following the OpenStreetMap [highway tag conventions](http://wiki.openstreetmap.org/wiki/Key:highway). A rule is setup with id 'TypicalUKSpeeds' to apply
-to the regionType 'UK', which would correspond to a region covering the whole UK. 
-Different rules for regionTypes London and Birmingham are then setup with a parentId of TypicalUKSpeeds and a multiplier
-of between 0.6-0.8. 
+of roads in the UK, following the OpenStreetMap [highway tag conventions](http://wiki.openstreetmap.org/wiki/Key:highway). 
+A rule is setup with id 'TypicalUKSpeeds' to apply to the regionType 'UK', 
+which would correspond to a region covering the whole UK. 
+Different rules for regionTypes London and Birmingham are then setup with a parentId of TypicalUKSpeeds 
+and a multiplier of between 0.6-0.8. 
 The rules for London and Birmingham will therefore use the speeds setup in their parent rule record (the UK record), 
 but reduced by between 60% and 80%.
 
@@ -228,13 +205,67 @@ To specify speed in kilometres instead set the *speedUnit* field to KM_PER_HOUR.
 		....
 	  }
 	}
+
+## Configuration of feature collection data
+A featureCollection should only contain [Polygon](http://geojson.org/geojson-spec.html#polygon) or 
+[MultiPolygon](http://geojson.org/geojson-spec.html#multipolygon) geometry types.
+Each feature should have a **regionType** property which links to the speed rules.
+RegionType could refer to a geographic area - e.g. London - or a type of geographic area (e.g. 'big city').
+Multiple features can therefore have the same regionType, there is no requirement for it to be a unique value per feature.
+
+The order of a feature in the featureCollection is used as its priority 
+when assigning a geographic area (technically a leaf node in the spatial tree) to a regionType.
+If for example, you have a featureCollection containing polygons boundaries for United Kingdom, 
+Central London and Outer London, your first feature should be the smallest or innermost feature - Central London - 
+followed by Outer London (which Central London sits within) and then the United Kingdom. 
+The order within the collection is therefore used to model overlapping polygons where one polygon sits within another.
 	
-## Visualising regions in ODL Studio
-TODO DOCUMENT THIS
+## Building a Graphhopper graph with speed regions
+The integration with Graphhopper is currently experimental and available for car speed profile only.
+Full integration within the Graphhopper project is planned.
+See the projects com.opendoorlogistics.speedregions.experimental.gh0.5 and com.opendoorlogistics.speedregions.experimental.ghlatest
+to build a car profile graph using speed regions with Graphhopper 0.5 and Graphhopper latest release (version 0.7 as of 28/9/2016).
+
+To build a Graphhopper graph using speed regions, build the projects using Maven and run from the command line as shown [here](http://www.opendoorlogistics.com/tutorials/tutorial-vi-advance-configuration/building-road-network-graphs/)
+but with one of two sets of additional command line arguments:
+
+* Using a *CompiledSpeedRules* file. Add the argument:
+
+		speedregions.compiled=your_compiled_speed_rules_filename
+
+* Using an *UncompiledSpeedRules* file. Add the two arguments:
+
+		speedregions.uncompiled=your_uncompiled_speed_rules_filename
+		speedregions.tolerance=tolerance_in_metres
+	
+### Choosing the speed regions tolerance value
+The tolerance measures how accurate the spatial tree will be.
+Technically speaking, the spatial tree divides the world up into rectangles, assigning each rectangle to a single region.
+The tolerance is the minimum side length of these rectangles; so no rectangle will be created with a side length less
+than *tolerance_in_metres*.
+
+Road edges whose centre is within *tolerance_in_metres* of a region boundary may therefore be placed in the wrong region.
+Generally speaking, the effect of placing an edge already near a region boundary within the wrong region 
+will be small, so tolerance can be a relatively high value.
+The tolerance value should however be signficantly smaller than the approximate width or height of your regions,
+or your regions will not be represented properly or not even used.
+The building of the spatial tree (i.e. the compilation step) takes a lot longer the smaller the tolerance is
+and the compiled files will be a lot larger.
+
+We recommend using a starting value of 500m and only reducing this if needed.
+	
+## Visualising regions and the tree in ODL Studio
+ODL Studio can be used for visualising the tree (TODO DOCUMENT THIS).
+
+![Speed regions shown for London built with 100m tolerance and a route superimposed with and without the regions.](http://www.opendoorlogistics.com/wp-content/uploads/speedregions/London-route-comparison.png)
 
 ## Future developments
 
-* Full integration into Graphhopper project
+* Full integration into Graphhopper project.
 
-* Binary format for compiled tree - the large size of the compiled tree can limit the practicallity of speed regions
-	to national level. The file size could be reduced dramatically without much work (for example, the compressed file size of the JSON is just ~3% of the uncompressed).
+* Binary format for compiled tree - the large size of the compile tree in the CompiledSpeedRules file 
+	can limit the practicallity of speed regions to national level. 
+	The file size could be reduced dramatically with a small amount of future development work 
+	(for example, the compressed file size of the compiled JSON is just ~3% of the uncompressed).
+	
+* Integrate speeds based on *trackType* tag, currently we ignore these.

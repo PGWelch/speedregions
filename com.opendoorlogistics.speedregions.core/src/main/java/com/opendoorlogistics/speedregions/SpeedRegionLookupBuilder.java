@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Logger;
 
 import org.geojson.FeatureCollection;
 
@@ -32,13 +31,12 @@ import com.opendoorlogistics.speedregions.beans.files.CompiledSpeedRulesFile;
 import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
 import com.opendoorlogistics.speedregions.spatialtree.GeomUtils;
 import com.opendoorlogistics.speedregions.spatialtree.QueryProcessor;
-import com.opendoorlogistics.speedregions.spatialtree.SpatialTreeStats;
 import com.opendoorlogistics.speedregions.spatialtree.TreeBuilder;
 import com.vividsolutions.jts.geom.Geometry;
 
 public class SpeedRegionLookupBuilder {
 	public static final double DEFAULT_MIN_CELL_LENGTH_METRES = 10;
-	private static final Logger LOGGER = Logger.getLogger(SpeedRegionLookupBuilder.class.getName());
+//	private static final Logger LOGGER = Logger.getLogger(SpeedRegionLookupBuilder.class.getName());
 
 	/**
 	 * Load the lookup from a text file containing {@link com.opendoorlogistics.speedregions.beans.files.CompiledSpeedRulesFile} in JSON form.
@@ -153,7 +151,7 @@ public class SpeedRegionLookupBuilder {
 			}
 		}
 		final SpatialTreeNode root=TreeBuilder.build(collections, minCellLengthMetres);
-		LOGGER.info("Built quadtree: " + SpatialTreeStats.build(root).toString());
+	//	LOGGER.info("Built quadtree: " + SpatialTreeStats.build(root).toString());
 		
 		CompiledSpeedRulesFile built = new CompiledSpeedRulesFile();
 		built.setTree(root);

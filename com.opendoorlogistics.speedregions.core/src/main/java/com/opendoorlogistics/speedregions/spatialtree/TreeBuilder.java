@@ -30,7 +30,6 @@ import com.opendoorlogistics.speedregions.SpeedRegionConsts;
 import com.opendoorlogistics.speedregions.TextUtils;
 import com.opendoorlogistics.speedregions.beans.Bounds;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
-import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Polygon;
 
@@ -75,68 +74,22 @@ public class TreeBuilder {
 	}
 
 	private boolean isVerticallySplittable(Bounds b) {
-		double newWidth = getWidthMetres(b)/2;
-		double ratio = newWidth / getHeightMetres(b);
+		double newWidth = GeomUtils.getWidthMetres(b)/2;
+		double ratio = newWidth / GeomUtils.getHeightMetres(b);
 		return isOkSidesRatio(ratio) && newWidth > minLengthMetres;
 	}
 
 	private boolean isOkSidesRatio(double ratio){
 		return ratio >= (MIN_SIDES_RATIO - 0.0001);
 	}
+
 	
-	private double getWidthMetres(Bounds b) {
-		double dLatCentre = getLatCentre(b);
-		double width = GeomUtils.greatCircleApprox(dLatCentre, b.getMinLng(), dLatCentre, b.getMaxLng());
-		return width;
-	}
 	
 	private boolean isHorizontallySplittable(Bounds b) {
-		double newHeight = getHeightMetres(b)/2;
-		double ratio = newHeight / getWidthMetres(b);
+		double newHeight = GeomUtils.getHeightMetres(b)/2;
+		double ratio = newHeight / GeomUtils.getWidthMetres(b);
 		return isOkSidesRatio(ratio) && newHeight > minLengthMetres;
 	}
-
-	private double getHeightMetres(Bounds b) {
-		double dLngCentre = getLngCentre(b);
-		double height = GeomUtils.greatCircleApprox(b.getMinLat(), dLngCentre, b.getMaxLat(), dLngCentre);
-		return height;
-	}
-	
-//	private boolean isSplittable(SpatialTreeNodeWithGeometry node) {
-//		// if(node == root){
-//		// // root should always be splittable (and distance calculations may not work for it anyway....)
-//		// return true;
-//		// }
-//
-//		// Distance calculation doesn't work if we have a node which covers the whole range of lat / long.
-//		// We therefore split anything with more than 90 degrees lat or long range...
-//		Bounds b = node.getBounds();
-//		if (b.getMaxLat() - b.getMinLat() >= 90) {
-//			return true;
-//		}
-//		if (b.getMaxLng() - b.getMinLng() >= 90) {
-//			return true;
-//		}
-//
-//		// We do b-tree splitting, therefore sometimes 1 side length is twice the other.
-//		// If we want to use min side length
-//		// double dLngCentre = getLngCentre(node);
-//		// double dLatCentre = getLatCentre(node);
-//		// double width = RegionProcessorUtils.greatCircleApprox(dLatCentre, b.getMinLng(), dLatCentre, b.getMaxLng());
-//		// double height = RegionProcessorUtils.greatCircleApprox(b.getMinLat(), dLngCentre, b.getMaxLat(), dLngCentre);
-//		// if(width < minSideLengthMetres && height < minSideLengthMetres){
-//		// return false;
-//		// }
-//
-//		// We do b-tree splitting, therefore sometimes 1 side length is twice the other.
-//		// We therefore measure the diagonal instead.
-//		double diagonal = RegionProcessorUtils.greatCircleApprox(b.getMinLat(), b.getMinLng(), b.getMaxLat(), b.getMaxLng());
-//		if (diagonal < minLengthMetres) {
-//			return false;
-//		}
-//
-//		return true;
-//	}
 
 
 	
@@ -329,7 +282,7 @@ public class TreeBuilder {
 
 	private List<SpatialTreeNodeWithGeometry> getVerticalSplit(Bounds b) {
 		List<SpatialTreeNodeWithGeometry> vSplitList = new ArrayList<>(2);
-		double dLngCentre = getLngCentre(b);
+		double dLngCentre = GeomUtils.getLngCentre(b);
 		for (int i = 0; i <= 1; i++) {
 			double lngMin = i == 0 ? b.getMinLng() : dLngCentre;
 			double lngMax = i == 0 ? dLngCentre : b.getMaxLng();
@@ -340,7 +293,7 @@ public class TreeBuilder {
 
 	private List<SpatialTreeNodeWithGeometry> getHorizontalSplit(Bounds b) {
 		List<SpatialTreeNodeWithGeometry> hSplitList = new ArrayList<>(2);
-		double dLatCentre = getLatCentre(b);
+		double dLatCentre = GeomUtils.getLatCentre(b);
 		for (int i = 0; i <= 1; i++) {
 			double latMin = i == 0 ? b.getMinLat() : dLatCentre;
 			double latMax = i == 0 ? dLatCentre : b.getMaxLat();
@@ -397,15 +350,6 @@ public class TreeBuilder {
 
 	}
 
-	private double getLatCentre(Bounds b) {
-		double dLatCentre = 0.5 * (b.getMinLat() + b.getMaxLat());
-		return dLatCentre;
-	}
-
-	private double getLngCentre(Bounds b) {
-		double dLngCentre = 0.5 * (b.getMinLng() +b.getMaxLng());
-		return dLngCentre;
-	}
 
 	private synchronized SpatialTreeNode finishBuilding() {
 		// deep copy without the extra builder fields (i.e. so use the base bean class)

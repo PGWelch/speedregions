@@ -90,16 +90,16 @@ public class SpeedRule extends JSONToString {
 	 * @return
 	 */
 	@JsonIgnore
-	public double applyRule(String highwayType, double originalSpeedKmH) {
+	public double applyRule(String highwayType, double originalSpeedKmH, boolean usedMaxSpeed) {
 
-		if(highwayType!=null){
+		if(highwayType!=null && !usedMaxSpeed){
 			Float speed = getSpeedsByRoadType().get(highwayType);
 			if (speed != null) {
 				return SpeedUnit.convert(speed, getSpeedUnit(), SpeedUnit.KM_PER_HOUR);
 			}			
 		}
 
-		// If no rule set, use the speed and apply the multiplier
+		// If no rule set or we used the max speed, use the original speed and apply the multiplier
 		double ret = originalSpeedKmH * getMultiplier();
 		return ret;
 	}

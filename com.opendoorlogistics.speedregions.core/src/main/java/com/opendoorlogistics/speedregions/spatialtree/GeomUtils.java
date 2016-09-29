@@ -258,5 +258,25 @@ public class GeomUtils {
 		return distance;
 	}
 	
+	public static double getLatCentre(Bounds b) {
+		double dLatCentre = 0.5 * (b.getMinLat() + b.getMaxLat());
+		return dLatCentre;
+	}
 
+	public static double getLngCentre(Bounds b) {
+		double dLngCentre = 0.5 * (b.getMinLng() +b.getMaxLng());
+		return dLngCentre;
+	}
+
+	public static double getWidthMetres(Bounds b) {
+		double dLatCentre = getLatCentre(b);
+		double width = greatCircleApprox(dLatCentre, b.getMinLng(), dLatCentre, b.getMaxLng());
+		return width;
+	}
+
+	public static double getHeightMetres(Bounds b) {
+		double dLngCentre = getLngCentre(b);
+		double height = greatCircleApprox(b.getMinLat(), dLngCentre, b.getMaxLat(), dLngCentre);
+		return height;
+	}
 }
