@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.opendoorlogistics.speedregions;
+package com.opendoorlogistics.speedregions.utils;
+
+import static com.opendoorlogistics.speedregions.utils.ExceptionUtils.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,7 +30,7 @@ import org.geojson.Feature;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-
+import com.opendoorlogistics.speedregions.SpeedRegionConsts;
 /**
  * Miscellaneous utils used to create the region lookup
  * @author Phil
@@ -73,13 +75,6 @@ public class TextUtils {
 			throw asUncheckedException(e);
 		}
 		return writer.toString();
-	}
-	
-	public static RuntimeException asUncheckedException(Throwable e){
-		if(RuntimeException.class.isInstance(e)){
-			return (RuntimeException)e;
-		}
-		return new RuntimeException(e);
 	}
 	
 

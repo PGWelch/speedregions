@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 import com.opendoorlogistics.speedregions.beans.Bounds;
 import com.opendoorlogistics.speedregions.beans.files.CompiledSpeedRulesFile;
 import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
-import com.opendoorlogistics.speedregions.spatialtree.GeomUtils;
+import com.opendoorlogistics.speedregions.utils.GeomUtils;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;

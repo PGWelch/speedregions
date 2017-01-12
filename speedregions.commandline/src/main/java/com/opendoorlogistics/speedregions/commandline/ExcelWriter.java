@@ -31,9 +31,9 @@ import org.geojson.Feature;
 
 import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatTypes;
 import com.opendoorlogistics.speedregions.SpeedRegionConsts;
-import com.opendoorlogistics.speedregions.TextUtils;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
-import com.opendoorlogistics.speedregions.spatialtree.GeomUtils;
+import com.opendoorlogistics.speedregions.utils.GeomUtils;
+import com.opendoorlogistics.speedregions.utils.TextUtils;
 
 public class ExcelWriter {
 	

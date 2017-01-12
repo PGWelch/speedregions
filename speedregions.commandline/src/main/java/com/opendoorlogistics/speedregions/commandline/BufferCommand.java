@@ -28,8 +28,8 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 
 import com.opendoorlogistics.speedregions.SpeedRegionConsts;
-import com.opendoorlogistics.speedregions.TextUtils;
-import com.opendoorlogistics.speedregions.spatialtree.GeomUtils;
+import com.opendoorlogistics.speedregions.utils.GeomUtils;
+import com.opendoorlogistics.speedregions.utils.TextUtils;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;

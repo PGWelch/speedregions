@@ -25,7 +25,7 @@ import java.util.TreeMap;
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
 import com.opendoorlogistics.speedregions.beans.SpeedUnit;
 import com.opendoorlogistics.speedregions.beans.files.AbstractSpeedRulesFile;
-import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
+import com.opendoorlogistics.speedregions.utils.TextUtils;
 import com.rits.cloning.Cloner;
 
 public class SpeedRulesProcesser {

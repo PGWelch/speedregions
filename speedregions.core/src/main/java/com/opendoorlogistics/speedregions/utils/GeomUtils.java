@@ -1,5 +1,6 @@
-package com.opendoorlogistics.speedregions.spatialtree;
+package com.opendoorlogistics.speedregions.utils;
 
+import static com.opendoorlogistics.speedregions.utils.ExceptionUtils.*;
 import static java.lang.Math.atan2;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
@@ -12,7 +13,6 @@ import org.geojson.GeoJsonObject;
 import org.geojson.LngLatAlt;
 import org.geojson.MultiPolygon;
 
-import com.opendoorlogistics.speedregions.TextUtils;
 import com.opendoorlogistics.speedregions.beans.Bounds;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
 import com.vividsolutions.jts.geom.Coordinate;
@@ -44,7 +44,7 @@ public class GeomUtils {
 			WKTReader reader = new WKTReader(GeomUtils.newGeomFactory());
 			return reader.read(wkt);		
 		} catch (ParseException e) {
-			throw TextUtils.asUncheckedException(e);
+			throw asUncheckedException(e);
 		}	
 	}
 

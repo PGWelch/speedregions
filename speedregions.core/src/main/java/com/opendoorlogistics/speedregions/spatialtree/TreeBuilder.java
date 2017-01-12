@@ -27,9 +27,10 @@ import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 
 import com.opendoorlogistics.speedregions.SpeedRegionConsts;
-import com.opendoorlogistics.speedregions.TextUtils;
 import com.opendoorlogistics.speedregions.beans.Bounds;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
+import com.opendoorlogistics.speedregions.utils.GeomUtils;
+import com.opendoorlogistics.speedregions.utils.TextUtils;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Polygon;
 

@@ -15,7 +15,7 @@ import com.opendoorlogistics.speedregions.SpeedRegionLookup;
 import com.opendoorlogistics.speedregions.SpeedRegionLookup.SpeedRuleLookup;
 import com.opendoorlogistics.speedregions.SpeedRegionLookupBuilder;
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
-import com.opendoorlogistics.speedregions.spatialtree.GeomUtils;
+import com.opendoorlogistics.speedregions.utils.GeomUtils;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Point;
 

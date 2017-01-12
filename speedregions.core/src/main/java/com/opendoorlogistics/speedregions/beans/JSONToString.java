@@ -1,6 +1,6 @@
 package com.opendoorlogistics.speedregions.beans;
 
-import com.opendoorlogistics.speedregions.TextUtils;
+import com.opendoorlogistics.speedregions.utils.TextUtils;
 
 public abstract class JSONToString {
 

@@ -25,9 +25,9 @@ import org.geojson.FeatureCollection;
 
 import com.opendoorlogistics.speedregions.Examples;
 import com.opendoorlogistics.speedregions.SpeedRulesProcesser;
-import com.opendoorlogistics.speedregions.TextUtils;
 import com.opendoorlogistics.speedregions.beans.files.CompiledSpeedRulesFile;
 import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
+import com.opendoorlogistics.speedregions.utils.TextUtils;
 
 public class CommandLine {
 	private static final Logger LOGGER = Logger.getLogger(CommandLine.class.getName());

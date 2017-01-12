@@ -16,7 +16,7 @@
 package com.opendoorlogistics.speedregions.beans;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.opendoorlogistics.speedregions.TextUtils;
+import com.opendoorlogistics.speedregions.utils.TextUtils;
 import com.vividsolutions.jts.geom.Envelope;
 
 /**

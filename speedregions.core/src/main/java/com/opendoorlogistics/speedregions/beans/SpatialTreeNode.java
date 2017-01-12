@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.opendoorlogistics.speedregions.TextUtils;
+import com.opendoorlogistics.speedregions.utils.TextUtils;
 
 /**
  * Spatial tree node with support for JSON serialisation / deserialisation

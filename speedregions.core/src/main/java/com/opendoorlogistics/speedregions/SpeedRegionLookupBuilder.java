@@ -29,9 +29,10 @@ import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
 import com.opendoorlogistics.speedregions.beans.files.CompiledSpeedRulesFile;
 import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
-import com.opendoorlogistics.speedregions.spatialtree.GeomUtils;
 import com.opendoorlogistics.speedregions.spatialtree.QueryProcessor;
 import com.opendoorlogistics.speedregions.spatialtree.TreeBuilder;
+import com.opendoorlogistics.speedregions.utils.GeomUtils;
+import com.opendoorlogistics.speedregions.utils.TextUtils;
 import com.vividsolutions.jts.geom.Geometry;
 
 public class SpeedRegionLookupBuilder {

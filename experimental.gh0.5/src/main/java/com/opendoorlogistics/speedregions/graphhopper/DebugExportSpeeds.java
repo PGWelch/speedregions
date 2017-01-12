@@ -1,5 +1,7 @@
 package com.opendoorlogistics.speedregions.graphhopper;
 
+import static com.opendoorlogistics.speedregions.utils.ExceptionUtils.*;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -13,7 +15,7 @@ import org.apache.commons.io.FilenameUtils;
 import com.graphhopper.reader.OSMWay;
 import com.graphhopper.routing.util.AbstractFlagEncoder;
 import com.graphhopper.util.shapes.GHPoint;
-import com.opendoorlogistics.speedregions.TextUtils;
+import com.opendoorlogistics.speedregions.utils.TextUtils;
 
 public class DebugExportSpeeds {
 	private Random random = new Random(123);
@@ -51,7 +53,7 @@ public class DebugExportSpeeds {
 				outSubset.write(s);
 			}
 		} catch (IOException e) {
-			throw TextUtils.asUncheckedException(e);
+			throw asUncheckedException(e);
 		}
 	}
 	
