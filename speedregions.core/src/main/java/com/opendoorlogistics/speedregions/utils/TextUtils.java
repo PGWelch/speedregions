@@ -15,7 +15,7 @@
  */
 package com.opendoorlogistics.speedregions.utils;
 
-import static com.opendoorlogistics.speedregions.utils.ExceptionUtils.*;
+import static com.opendoorlogistics.speedregions.utils.ExceptionUtils.asUncheckedException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -99,6 +99,10 @@ public class TextUtils {
 			throw asUncheckedException(e);
 		}
 
+	}
+
+	public static boolean equalsStd(String s, String t){
+		return stdString(s).equals(stdString(t));
 	}
 	
 	public static String stdString(String s){

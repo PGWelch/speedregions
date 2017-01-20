@@ -8,6 +8,7 @@
 
 	<modules>
         <module>speedregions.core</module>
+        <module>speedregions.excelshp</module>
         <module>speedregions.commandline</module>
         <module>experimental.gh0.5</module>
         <module>experimental.ghlatest</module>

@@ -15,17 +15,10 @@
  */
 package com.opendoorlogistics.speedregions.commandline;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import org.geojson.FeatureCollection;
 
 import com.opendoorlogistics.speedregions.SpeedRegionConsts;
-import com.opendoorlogistics.speedregions.SpeedRegionLookupBuilder;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
-import com.opendoorlogistics.speedregions.beans.files.CompiledSpeedRulesFile;
-import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
 import com.opendoorlogistics.speedregions.spatialtree.TreeBuilder;
 
 /*

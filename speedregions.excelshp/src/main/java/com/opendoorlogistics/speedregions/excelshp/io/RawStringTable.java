@@ -1,4 +1,4 @@
-package com.opendoorlogistics.speedregions.excelshp;
+package com.opendoorlogistics.speedregions.excelshp.io;
 
 import java.util.ArrayList;
 import java.util.List;

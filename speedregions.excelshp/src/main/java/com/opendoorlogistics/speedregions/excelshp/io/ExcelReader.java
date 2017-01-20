@@ -1,4 +1,4 @@
-package com.opendoorlogistics.speedregions.excelshp;
+package com.opendoorlogistics.speedregions.excelshp.io;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,6 +9,7 @@ import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -18,9 +19,13 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
+import com.opendoorlogistics.speedregions.excelshp.processing.ExcelShp2GeoJSONConverter;
+import com.opendoorlogistics.speedregions.utils.ExceptionUtils;
 import com.opendoorlogistics.speedregions.utils.TextUtils;
 
 public class ExcelReader {
+	private static final Logger LOGGER = Logger.getLogger(ExcelReader.class.getName());		
+
 	private static final DecimalFormat DF;
 
 	static {
@@ -87,6 +92,7 @@ public class ExcelReader {
 	 * @return
 	 */
 	public static TreeMap<String,RawStringTable> readExcel(File file) {
+		LOGGER.info("Reading Excel " + file.getAbsolutePath());
 		InputStream inp = null;
 		Workbook wb = null;
 		TreeMap<String,RawStringTable> tables = new TreeMap<String,RawStringTable>();
@@ -142,17 +148,20 @@ public class ExcelReader {
 			}
 		}
 		catch(Exception e){
-			throw new RuntimeException(e);
+			throw ExceptionUtils.asUncheckedException(e);
 		}
 		finally{
 			try {
-				wb.close();
+				if(wb!=null){
+					wb.close();					
+				}
 			}
 			catch (IOException e1) {
-				throw new RuntimeException(e1);
+				throw ExceptionUtils.asUncheckedException(e1);
 			}		
 		}
 
+		LOGGER.info("Finished reading Excel " + file.getAbsolutePath());
 		return tables;
 	}
 

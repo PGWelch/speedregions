@@ -1,8 +1,8 @@
-package com.opendoorlogistics.speedregions.excelshp;
+package com.opendoorlogistics.speedregions.excelshp.io;
 
 import com.opendoorlogistics.speedregions.utils.TextUtils;
 
-public class StringConstants {
+public class IOStringConstants {
 	public static final String [] ROAD_TYPES = new String[]{"motorway",
 			"motorway_link",
 			"motorroad",

@@ -8,5 +8,11 @@ public class ExceptionUtils {
 		return new RuntimeException(e);
 	}
 	
-
+	public static String getMessage(Throwable e){
+		while(e!=null && e.getMessage()==null){
+			e = e.getCause();
+		}
+		
+		return e!=null ? e.getMessage() : null;
+	}
 }

@@ -12,7 +12,8 @@ public class ExampleCommands {
 		ArrayList<String> commands = new ArrayList<>();
 		
 		commands.add("-l");
-		commands.add("C:\\Users\\Phil\\Dropbox\\Business\\Dev\\GithubHPLaptop\\speedregions\\com.opendoorlogistics.speedregions.core\\examples\\GB-with-buffers.geojson");
+//		commands.add("C:\\Users\\Phil\\Dropbox\\Business\\Dev\\GithubHPLaptop\\speedregions\\com.opendoorlogistics.speedregions.core\\examples\\GB-with-buffers.geojson");
+		commands.add("C:\\Temp\\testExcelShp\\merged_polygons.geojson");
 	
 		// 100 m accuracy limit
 		commands.add("-limit");

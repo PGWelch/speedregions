@@ -22,19 +22,24 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
+import org.geojson.LngLatAlt;
 
 import com.opendoorlogistics.speedregions.SpeedRegionConsts;
 import com.opendoorlogistics.speedregions.beans.Bounds;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
 import com.opendoorlogistics.speedregions.utils.GeomUtils;
 import com.opendoorlogistics.speedregions.utils.TextUtils;
+import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Polygon;
 
 public class TreeBuilder {
+	private static final Logger LOGGER = Logger.getLogger(TreeBuilder.class.getName());
+
 	private final static double MIN_SIDES_RATIO = 0.25;
 	private final GeometryFactory geomFactory;
 	private final SpatialTreeNodeWithGeometry root;
@@ -64,15 +69,6 @@ public class TreeBuilder {
 		}
 	}
 
-	private static class QueryGeometry {
-		final Polygon polygon;
-		final String id;
-
-		public QueryGeometry(Polygon geometry, String id) {
-			this.polygon = geometry;
-			this.id = id;
-		}
-	}
 
 	private boolean isVerticallySplittable(Bounds b) {
 		double newWidth = GeomUtils.getWidthMetres(b)/2;
@@ -205,7 +201,7 @@ public class TreeBuilder {
 		return true;
 	}
 
-	private void addRecursively(SpatialTreeNodeWithGeometry node, int depth, QueryGeometry geometry) {
+	private void addRecursively(SpatialTreeNodeWithGeometry node, int depth, Geometry geometry, String geometryId) {
 		// check if node is already assigned, nodes are assigned to the first geometry
 		// that (a) totally encloses them, or (b) if the node is split to the finest granularity level,
 		// the first geometry they intersect
@@ -213,15 +209,19 @@ public class TreeBuilder {
 			return;
 		}
 
-		// do intersection test first (checks bounding boxes then does proper geometry tests if needed)
-		if (!isIntersecting(node, geometry)) {
+		// Get intersection with the node. 
+		// We can quit if the intersection is empty and crucially all calculations 
+		// within this node and its children only need to be done on the intersecting geometry,
+		// so we cut out massive amount of geometry - thereby speeding up processing massively
+		geometry = geometry.intersection(node.getGeometry());
+		if(geometry.isEmpty()){
 			return;
 		}
-
+		
 		// If already we have children then pass down to them
 		if (node.getChildren().size() > 0) {
 			for (SpatialTreeNode child : node.getChildren()) {
-				addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, geometry);
+				addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, geometry, geometryId);
 			}
 			recombineChildrenIfPossible(node);
 			return;
@@ -230,10 +230,16 @@ public class TreeBuilder {
 		// No children already. Assign and return if:
 		// (a) a node is totally contained by the polygon or
 		// (b) we can't split the node anymore
-		Bounds b = node.getBounds();		
-		boolean nodeIsContainedByPolygon = geometry.polygon.contains(node.getGeometry());
-		if (nodeIsContainedByPolygon || (!isHorizontallySplittable(b) && !isVerticallySplittable(b))) {
-			node.setRegionType(geometry.id);
+		Bounds b = node.getBounds();	
+		boolean stopSplit = !isHorizontallySplittable(b) && !isVerticallySplittable(b);
+		if(!stopSplit){
+			// The contains test is expensive, so we only do it after the cheap test
+			if(geometry.contains(node.getGeometry())){
+				stopSplit = true;
+			}
+		}
+		if (stopSplit) {
+			node.setRegionType(geometryId);
 			node.setAssignedPriority(nextPolygonPriority);
 			return;
 		}
@@ -271,13 +277,13 @@ public class TreeBuilder {
 
 		// add to the child geometries after split
 		for (SpatialTreeNode child : node.getChildren()) {
-			addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, geometry);
+			addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, geometry, geometryId);
 		}
 
 		recombineChildrenIfPossible(node);
 	}
 
-	private boolean isGoodSplit(QueryGeometry geometry, List<SpatialTreeNodeWithGeometry> hSplitList) {
+	private boolean isGoodSplit(Geometry geometry, List<SpatialTreeNodeWithGeometry> hSplitList) {
 		return isIntersecting(hSplitList.get(0), geometry)!=isIntersecting(hSplitList.get(1), geometry);
 	}
 
@@ -303,8 +309,8 @@ public class TreeBuilder {
 		return hSplitList;
 	}
 
-	private boolean isIntersecting(SpatialTreeNodeWithGeometry node, QueryGeometry geometry) {
-		return node.getGeometry().intersects(geometry.polygon);
+	private boolean isIntersecting(SpatialTreeNodeWithGeometry node, Geometry geometry) {
+		return node.getGeometry().intersects(geometry);
 	}
 
 	private void recurseFinaliseNode(SpatialTreeNode node) {
@@ -356,6 +362,7 @@ public class TreeBuilder {
 		// deep copy without the extra builder fields (i.e. so use the base bean class)
 		SpatialTreeNode ret = new SpatialTreeNode(root);
 		recurseFinaliseNode(ret);
+		LOGGER.info("Finished building spatial tree");
 		return ret;
 	}
 
@@ -370,13 +377,22 @@ public class TreeBuilder {
 	 * @return
 	 */
 	public static SpatialTreeNode build(List<FeatureCollection> featureCollections, double minDiagonalLengthMetres) {
+		LOGGER.info("Starting build of spatial tree");
+		
 		GeometryFactory geomFactory = GeomUtils.newGeomFactory();
 		TreeSet<TempPolygonRecord> prioritised = prioritisePolygons(featureCollections);
 
 		TreeBuilder builder = new TreeBuilder(geomFactory, minDiagonalLengthMetres);
+		long count=0;
 		for (TempPolygonRecord poly : prioritised) {
+			// count points in polygon for logging only
+			long pointsCount=0;
+			for(List<LngLatAlt> list : poly.polygon.getCoordinates()){
+				pointsCount+=list.size();
+			}
+			LOGGER.info("Adding polygon " + count++ + "/" + prioritised.size() + " containing " + pointsCount + " points to spatial tree with " + builder.root.countNodes() + " node(s)");
 			com.vividsolutions.jts.geom.Polygon jtsPolygon = GeomUtils.toJTS(geomFactory, poly.polygon);
-			builder.addRecursively(builder.root, 0, new QueryGeometry(jtsPolygon, poly.stdRegionType));
+			builder.addRecursively(builder.root, 0, jtsPolygon, poly.stdRegionType);
 			builder.nextPolygonPriority++;			
 			//builder.add(jtsPolygon, poly.stdRegionType);
 		}

@@ -16,6 +16,7 @@
 package com.opendoorlogistics.speedregions;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -81,7 +82,7 @@ public class SpeedRulesProcesser {
 		}
 
 		// this also does some validation
-		createSelfContainedRulesMap(allRules);
+		createSelfContainedRulesLookupMap(allRules);
 
 		return allRules;
 	}
@@ -91,72 +92,13 @@ public class SpeedRulesProcesser {
 	 * standardised. Parent id relations are removed so the rules are self-contained
 	 * 
 	 * @param files
-	 * @return
+	 * @return Map of encoder type (car, bike) to a map of region type to speed rule.
 	 */
-	public TreeMap<String, TreeMap<String, SpeedRule>> createSelfContainedRulesMap(List<SpeedRule> rules) {
-		// build id map and clone rules
-		rules = new ArrayList<>(rules);
-		final HashMap<String, SpeedRule> originalRules = new HashMap<>();
-		int n = rules.size();
-		for(int i =0 ; i <n;i++){
-			
-			// save to original map first
-			SpeedRule rule =rules.get(i);
-			if(rule.getId()!=null){
-				originalRules.put(TextUtils.stdString(rule.getId()), rule);
-			}
-			
-			// then clone and standardise road type strings
-			SpeedRule cloned= Cloner.standard().deepClone(rule);
-			if(rule.getSpeedsByRoadType()!=null){
-				cloned.getSpeedsByRoadType().clear();
-				for(Map.Entry<String, Float> entry : rule.getSpeedsByRoadType().entrySet()){
-					cloned.getSpeedsByRoadType().put(TextUtils.stdString(entry.getKey()), entry.getValue());
-				}					
-			}
-			rules.set(i, cloned);
-		}
-
-		// collapse parent relations
-		for(SpeedRule rule : rules){
-			if(rule.getSpeedsByRoadType()==null){
-				rule.setSpeedsByRoadType(new TreeMap<String, Float>());
-			}
-			
-			String parentId = rule.getParentId();
-			while(parentId!=null){
-				
-				// standardise parent string and find parent (should already be validated so should exist)
-				parentId = TextUtils.stdString(parentId);
-				SpeedRule originalParent = originalRules.get(parentId);
-	
-				// combine speeds by type, including our current multiplier
-				if(originalParent.getSpeedsByRoadType()!=null){
-					for(Map.Entry<String, Float> entry : originalParent.getSpeedsByRoadType().entrySet()){
-						String type = entry.getKey();
-						type = TextUtils.stdString(type);
-						if(!rule.getSpeedsByRoadType().containsKey(type)){
-							double parentSpeedInParentUnits = entry.getValue();
-							double parentSpeedInChildUnits = SpeedUnit.convert(parentSpeedInParentUnits, originalParent.getSpeedUnit(), rule.getSpeedUnit());
-							double childSpeed= parentSpeedInChildUnits * rule.getMultiplier();
-							rule.getSpeedsByRoadType().put(type,(float)childSpeed);
-						}
-					}					
-				}
-	
-				// update multiplier with the parent multiplier
-				rule.setMultiplier(rule.getMultiplier() * originalParent.getMultiplier());
-				
-				// go to next parent
-				parentId = originalParent.getParentId();
-			}
-			
-			// blank parent id now we've taken all its information
-			rule.setParentId(null);
-		}
+	public TreeMap<String, TreeMap<String, SpeedRule>> createSelfContainedRulesLookupMap(List<SpeedRule> rules) {
+		Collection<SpeedRule> collapsed = collapseParentRelations(rules).values();
 		
 		TreeMap<String, TreeMap<String, SpeedRule>> ret = new TreeMap<String, TreeMap<String, SpeedRule>>();
-		for (SpeedRule rule : rules) {
+		for (SpeedRule rule : collapsed) {
 			for (String encoder : rule.getMatchRule().getFlagEncoders()) {
 				encoder = TextUtils.stdString(encoder);
 				TreeMap<String, SpeedRule> map4Encoder = ret.get(encoder);
@@ -178,6 +120,77 @@ public class SpeedRulesProcesser {
 		}
 
 		return ret;
+	}
+
+	/**
+	 * 
+	 * @param rules Map of original rule to collapsed rule
+	 * @return
+	 */
+	public HashMap<SpeedRule, SpeedRule> collapseParentRelations(Iterable<SpeedRule> rules) {
+		// build id map and clone rules so we don't modify the input data
+		final HashMap<String, SpeedRule> originalRulesById = new HashMap<>();
+		HashMap<SpeedRule, SpeedRule>  original2Collapsed = new HashMap<>();
+		for(SpeedRule rule : rules){
+			
+			// save to original map first
+			if(rule.getId()!=null){
+				originalRulesById.put(TextUtils.stdString(rule.getId()), rule);
+			}
+			
+			// then clone and standardise road type strings
+			SpeedRule cloned= Cloner.standard().deepClone(rule);
+			if(rule.getSpeedsByRoadType()!=null){
+				cloned.getSpeedsByRoadType().clear();
+				for(Map.Entry<String, Float> entry : rule.getSpeedsByRoadType().entrySet()){
+					cloned.getSpeedsByRoadType().put(TextUtils.stdString(entry.getKey()), entry.getValue());
+				}					
+			}
+			
+			original2Collapsed.put(rule, cloned);
+		}
+
+		// collapse parent relations
+		for(SpeedRule clonedRule : original2Collapsed.values()){
+			if(clonedRule.getSpeedsByRoadType()==null){
+				clonedRule.setSpeedsByRoadType(new TreeMap<String, Float>());
+			}
+			
+			String parentId = clonedRule.getParentId();
+			while(TextUtils.stdString(parentId).length()>0){
+				
+				// standardise parent string and find parent (should already be validated so should exist)
+				parentId = TextUtils.stdString(parentId);
+				SpeedRule originalParent = originalRulesById.get(parentId);
+				if(originalParent==null){
+					throw new RuntimeException("Cannot find parent speed rule with id \"" + parentId + "\" for rule with id \"" + clonedRule.getId() + "\"");
+				}
+				
+				// combine speeds by type, including our current multiplier
+				if(originalParent.getSpeedsByRoadType()!=null){
+					for(Map.Entry<String, Float> entry : originalParent.getSpeedsByRoadType().entrySet()){
+						String type = entry.getKey();
+						type = TextUtils.stdString(type);
+						if(!clonedRule.getSpeedsByRoadType().containsKey(type)){
+							double parentSpeedInParentUnits = entry.getValue();
+							double parentSpeedInChildUnits = SpeedUnit.convert(parentSpeedInParentUnits, originalParent.getSpeedUnit(), clonedRule.getSpeedUnit());
+							double childSpeed= parentSpeedInChildUnits * clonedRule.getMultiplier();
+							clonedRule.getSpeedsByRoadType().put(type,(float)childSpeed);
+						}
+					}					
+				}
+	
+				// update multiplier with the parent multiplier
+				clonedRule.setMultiplier(clonedRule.getMultiplier() * originalParent.getMultiplier());
+				
+				// go to next parent
+				parentId = originalParent.getParentId();
+			}
+			
+			// blank parent id now we've taken all its information
+			clonedRule.setParentId(null);
+		}
+		return original2Collapsed;
 	}
 
 

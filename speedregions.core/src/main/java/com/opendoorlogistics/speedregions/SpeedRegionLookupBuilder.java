@@ -58,6 +58,10 @@ public class SpeedRegionLookupBuilder {
 	 */
 	public static SpeedRegionLookup loadFromUncompiledSpeedRulesFile(File uncompiledFile, double minCellLengthMetres) {
 		UncompiledSpeedRulesFile uncompiledSpeedRulesFile = TextUtils.fromJSON(uncompiledFile, UncompiledSpeedRulesFile.class);
+		return loadFromUncompiledSpeedRulesFile(uncompiledSpeedRulesFile, minCellLengthMetres);
+	}
+	public static SpeedRegionLookup loadFromUncompiledSpeedRulesFile(UncompiledSpeedRulesFile uncompiledSpeedRulesFile,
+			double minCellLengthMetres) {
 		CompiledSpeedRulesFile compiled = compileFiles(Arrays.asList(uncompiledSpeedRulesFile), minCellLengthMetres);
 		return fromCompiled(compiled);
 	}
@@ -73,7 +77,7 @@ public class SpeedRegionLookupBuilder {
 		
 		SpeedRulesProcesser processer = new SpeedRulesProcesser();
 		processer.validateSpeedRules(Arrays.asList(compiled));
-		final TreeMap<String, TreeMap<String, SpeedRule>> rulesMap =processer.createSelfContainedRulesMap(compiled.getRules());
+		final TreeMap<String, TreeMap<String, SpeedRule>> rulesMap =processer.createSelfContainedRulesLookupMap(compiled.getRules());
 				
 		final QueryProcessor queryProcessor = new QueryProcessor(GeomUtils.newGeomFactory(), compiled.getTree());
 		return new SpeedRegionLookup() {
