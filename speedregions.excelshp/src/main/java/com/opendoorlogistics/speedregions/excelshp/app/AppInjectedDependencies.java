@@ -1,5 +1,8 @@
 package com.opendoorlogistics.speedregions.excelshp.app;
 
+import java.util.function.Consumer;
+
+import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
 import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
 
 /**
@@ -11,7 +14,7 @@ import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
  */
 public interface AppInjectedDependencies {
 	double speedKmPerHour(String flagEncoderType, String highwayType);
-	void buildGraph(AppSettings settings, UncompiledSpeedRulesFile uncompiledSpeedRulesFile);
+	void buildGraph(AppSettings settings, UncompiledSpeedRulesFile uncompiledSpeedRulesFile, Consumer<SpatialTreeNode> builtTreeCB);
 	
 	/**
 	 * Latest Geotools version is messing up the global logging settings.

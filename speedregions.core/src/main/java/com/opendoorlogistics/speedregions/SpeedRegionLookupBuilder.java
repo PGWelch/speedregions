@@ -73,7 +73,7 @@ public class SpeedRegionLookupBuilder {
 	 * @param compiled
 	 * @return
 	 */
-	public static SpeedRegionLookup fromCompiled(CompiledSpeedRulesFile compiled) {
+	public static SpeedRegionLookup fromCompiled(final CompiledSpeedRulesFile compiled) {
 		
 		SpeedRulesProcesser processer = new SpeedRulesProcesser();
 		processer.validateSpeedRules(Arrays.asList(compiled));
@@ -89,6 +89,11 @@ public class SpeedRegionLookupBuilder {
 			
 			public SpeedRuleLookup createLookupForEncoder(String encoder) {
 				return createRulesLookupForEncoder(rulesMap, encoder);
+			}
+
+			@Override
+			public SpatialTreeNode getTree() {
+				return compiled.getTree();
 			}
 		};
 	}

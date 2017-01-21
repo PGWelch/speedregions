@@ -7,6 +7,7 @@ import static java.lang.Math.sin;
 import static java.lang.Math.toRadians;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.geojson.GeoJsonObject;
@@ -17,6 +18,7 @@ import com.opendoorlogistics.speedregions.beans.Bounds;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.Polygon;
@@ -172,6 +174,21 @@ public class GeomUtils {
 		return builder.toString();
 	}
 
+	public static LinkedList<Polygon> getPolygons(Geometry geometry){
+		LinkedList<Polygon> polygons = new LinkedList<>();
+		if(geometry instanceof Polygon){
+			polygons.add((Polygon)geometry);
+		}else if(geometry instanceof GeometryCollection){
+			for(int i =0 ; i < geometry.getNumGeometries() ; i++){
+				Geometry element = geometry.getGeometryN(i);
+				if(element instanceof Polygon){
+					polygons.add((Polygon)element);
+				}
+			}
+		}
+		return polygons;
+	}
+	
 	public static org.geojson.MultiPolygon toGeoJSON(com.vividsolutions.jts.geom.MultiPolygon mp){
 		org.geojson.MultiPolygon ret = new MultiPolygon();
 		int n = mp.getNumGeometries();

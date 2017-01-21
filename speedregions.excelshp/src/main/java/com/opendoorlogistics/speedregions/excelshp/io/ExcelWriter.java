@@ -1,3 +1,5 @@
+package com.opendoorlogistics.speedregions.excelshp.io;
+
 /*
  * Copyright 2016 Open Door Logistics Ltd
  * 
@@ -13,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.opendoorlogistics.speedregions.commandline;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,13 +28,13 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.geojson.Feature;
 
 import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatTypes;
 import com.opendoorlogistics.speedregions.SpeedRegionConsts;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
+import com.opendoorlogistics.speedregions.excelshp.io.ExcelWriter.ExportTable;
+import com.opendoorlogistics.speedregions.excelshp.io.ExcelWriter.ExportTableColumn;
 import com.opendoorlogistics.speedregions.utils.GeomUtils;
-import com.opendoorlogistics.speedregions.utils.TextUtils;
 
 public class ExcelWriter {
 	
@@ -125,7 +126,7 @@ public class ExcelWriter {
 
 	}
 	
-	public void writeSheets(File file, ExportTable...tables) {
+	public static void writeSheets(File file, ExportTable...tables) {
 		// create empty workbook with a bold font style
 		XSSFWorkbook wb = new XSSFWorkbook();
 		XSSFCellStyle headerStyle = wb.createCellStyle();
@@ -194,26 +195,7 @@ public class ExcelWriter {
 		}
 	}
 	
-	public void exportState(State state , File file){
-		// write polygons
-		ExportTable polygons = new ExportTable();
-		polygons.setName("Polygons");
-		polygons.getHeader().add(new ExportTableColumn("Number", JsonFormatTypes.NUMBER));
-		polygons.getHeader().add(new ExportTableColumn(SpeedRegionConsts.REGION_TYPE_KEY, JsonFormatTypes.STRING));
-		polygons.getHeader().add(new ExportTableColumn(SpeedRegionConsts.SOURCE_KEY, JsonFormatTypes.STRING));
-		polygons.getHeader().add(new ExportTableColumn("Geom", JsonFormatTypes.STRING));
-		int i =0 ;
-		for(Feature feature : state.featureCollection.getFeatures()){
-			List<String> row = new ArrayList<>();
-			row.add(Integer.toString(i++));
-			row.add(TextUtils.findRegionType(feature));
-			row.add(TextUtils.findProperty(feature, SpeedRegionConsts.SOURCE_KEY));
-			if(feature.getGeometry()!=null){
-				row.add(GeomUtils.toWKT(GeomUtils.toJTS(GeomUtils.newGeomFactory(), feature.getGeometry())));				
-			}
-			polygons.getRows().add(row);
-		}
-		
+	public static ExportTable exportTree(SpatialTreeNode spatialTree) {
 		// write quadtree (leaves only?)
 		final ExportTable tree = new ExportTable();
 		tree.setName("SpatialTreeLeaves");
@@ -240,10 +222,10 @@ public class ExcelWriter {
 			}
 		}
 		Recurser recurser = new Recurser();
-		if(state.compiled!=null){
-			recurser.recurse(state.compiled);
-		}
-		
-		writeSheets(file, polygons,tree);
+	
+			recurser.recurse(spatialTree);
+		return tree;
 	}
+
+	
 }

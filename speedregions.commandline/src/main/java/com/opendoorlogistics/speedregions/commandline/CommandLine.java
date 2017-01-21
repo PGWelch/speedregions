@@ -218,7 +218,7 @@ public class CommandLine {
 				}
 				state.compileIfNull();
 				TextUtils.toJSONFile(state.compiled, new File(args[0]));
-				new ExcelWriter().exportState(state, new File(args[0]));
+				new ExcelStateWriter().exportState(state, new File(args[0]));
 			}
 		});
 		

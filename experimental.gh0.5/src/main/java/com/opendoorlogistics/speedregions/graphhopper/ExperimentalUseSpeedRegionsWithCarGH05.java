@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
@@ -24,6 +25,7 @@ import com.graphhopper.util.shapes.GHPoint;
 import com.opendoorlogistics.speedregions.SpeedRegionLookup;
 import com.opendoorlogistics.speedregions.SpeedRegionLookup.SpeedRuleLookup;
 import com.opendoorlogistics.speedregions.SpeedRegionLookupBuilder;
+import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
 import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
 import com.opendoorlogistics.speedregions.excelshp.app.AppInjectedDependencies;
@@ -93,11 +95,15 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 			}
 
 			@Override
-			public void buildGraph(AppSettings settings, UncompiledSpeedRulesFile uncompiledSpeedRulesFile) {
+			public void buildGraph(AppSettings settings, UncompiledSpeedRulesFile uncompiledSpeedRulesFile,Consumer<SpatialTreeNode> builtTreeCB) {
 				LOGGER.info("Compiling speed regions lookup");
 				SpeedRegionLookup speedRegionLookup = SpeedRegionLookupBuilder.loadFromUncompiledSpeedRulesFile(uncompiledSpeedRulesFile,
 						settings.getGridCellMetres());
 
+				if(builtTreeCB!=null){
+					builtTreeCB.accept(speedRegionLookup.getTree());
+				}
+				
 				ArrayList<AbstractFlagEncoder> encoders = new ArrayList<>();
 				MyCarFlagEncoder encoder = new MyCarFlagEncoder(new PMap(), speedRegionLookup);
 				encoders.add(encoder);
@@ -105,8 +111,10 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 				EncodingManager myEncodingManager = new EncodingManager(encoders, bytesForFlags);
 
 				LOGGER.info("Building graph");
-				new GraphHopper().forDesktop().init(mergedArgs).setOSMFile(settings.getPbfFile())
-						.setGraphHopperLocation(settings.getOutdirectory()).setEncodingManager(myEncodingManager).importOrLoad().close();
+				
+				// need to set OSM file before calling init on Graphhopper as an exception will fire otherwise...
+				mergedArgs.put("osmreader.osm", new File(settings.getPbfFile()).getAbsolutePath());
+				new GraphHopper().forDesktop().init(mergedArgs).setGraphHopperLocation(settings.getOutdirectory()).setEncodingManager(myEncodingManager).importOrLoad().close();
 
 			}
 

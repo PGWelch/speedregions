@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -34,6 +35,7 @@ import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
 import com.opendoorlogistics.speedregions.utils.GeomUtils;
 import com.opendoorlogistics.speedregions.utils.TextUtils;
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Polygon;
 
@@ -50,17 +52,17 @@ public class TreeBuilder {
 		this.geomFactory = geomFactory;
 		this.root = SpatialTreeNodeWithGeometry.createGlobal(geomFactory);
 		this.minLengthMetres = minSideLengthMetres;
-		
+
 		// distance calculations aren't valid if we stretch round the whole globe
 		// so we split the globe into quarters first to ensure they can be done
-		boolean horizSplit=true;
+		boolean horizSplit = true;
 		List<SpatialTreeNodeWithGeometry> openSet = new ArrayList<>();
 		openSet.add(root);
-		for(int i =0 ; i<2 ; i++){
+		for (int i = 0; i < 2; i++) {
 			List<SpatialTreeNodeWithGeometry> newNodes = new ArrayList<>();
-			for(SpatialTreeNode node:openSet){
+			for (SpatialTreeNode node : openSet) {
 				Bounds b = node.getBounds();
-				List<SpatialTreeNodeWithGeometry> split = horizSplit? getHorizontalSplit(b): getVerticalSplit(b);
+				List<SpatialTreeNodeWithGeometry> split = horizSplit ? getHorizontalSplit(b) : getVerticalSplit(b);
 				node.getChildren().addAll(split);
 				newNodes.addAll(split);
 			}
@@ -69,27 +71,21 @@ public class TreeBuilder {
 		}
 	}
 
-
 	private boolean isVerticallySplittable(Bounds b) {
-		double newWidth = GeomUtils.getWidthMetres(b)/2;
+		double newWidth = GeomUtils.getWidthMetres(b) / 2;
 		double ratio = newWidth / GeomUtils.getHeightMetres(b);
 		return isOkSidesRatio(ratio) && newWidth > minLengthMetres;
 	}
 
-	private boolean isOkSidesRatio(double ratio){
+	private boolean isOkSidesRatio(double ratio) {
 		return ratio >= (MIN_SIDES_RATIO - 0.0001);
 	}
 
-	
-	
 	private boolean isHorizontallySplittable(Bounds b) {
-		double newHeight = GeomUtils.getHeightMetres(b)/2;
+		double newHeight = GeomUtils.getHeightMetres(b) / 2;
 		double ratio = newHeight / GeomUtils.getWidthMetres(b);
 		return isOkSidesRatio(ratio) && newHeight > minLengthMetres;
 	}
-
-
-	
 
 	/**
 	 * Return true if and only if both are assigned and assigned to the same region
@@ -106,58 +102,58 @@ public class TreeBuilder {
 	}
 
 	private void recombineChildrenIfPossible(SpatialTreeNode node) {
-		if(recombineChildrenIfPossibleRule1(node)){
+		if (recombineChildrenIfPossibleRule1(node)) {
 			return;
 		}
-		
-//		if(recombineChildrenIfPossibleRule2(node)){
-//			
-//		}
+
+		// if(recombineChildrenIfPossibleRule2(node)){
+		//
+		// }
 	}
-	
-//	/**
-//	 * TODO If you have 3 or 4 grandchildren and only one is assigned,
-//	 * check if the other 3 can be combined together.
-//	 * @param node
-//	 * @return
-//	 */
-//	private boolean recombineChildrenIfPossibleRule2(SpatialTreeNode node) {
-//		int nc = node.getChildren().size();
-//		if (nc == 0) {
-//			// Must have children
-//			return false;
-//		}
-//
-//		ArrayList<SpatialTreeNode> grandchildren = new ArrayList<>();
-//		for(SpatialTreeNode child:node.getChildren()){
-//			grandchildren.addAll(child.getChildren());
-//		}
-//		
-//		int assignedGrandchildren=0;
-//		for(SpatialTreeNode gc:grandchildren){
-//			if(gc.getRegionId()!=null){
-//				assignedGrandchildren++;
-//			}else if(gc.getChildren().size()>0){
-//				// unassigned grandchildren must be empty
-//				return false;
-//			}
-//		}
-//		
-//		if(assignedGrandchildren!=1){
-//			return false;
-//		}
-//		
-//		// can we recombine them??
-//		
-//		// what about a child which isn't split into grandchildren yet?
-//		
-//		// we'll probably commonly have a node, split into 2 children, with 1 child only split again.
-//		
-//		// what if we recombine something that's assigned later-on....
-//		
-//		return false;
-//	}
-	
+
+	// /**
+	// * TODO If you have 3 or 4 grandchildren and only one is assigned,
+	// * check if the other 3 can be combined together.
+	// * @param node
+	// * @return
+	// */
+	// private boolean recombineChildrenIfPossibleRule2(SpatialTreeNode node) {
+	// int nc = node.getChildren().size();
+	// if (nc == 0) {
+	// // Must have children
+	// return false;
+	// }
+	//
+	// ArrayList<SpatialTreeNode> grandchildren = new ArrayList<>();
+	// for(SpatialTreeNode child:node.getChildren()){
+	// grandchildren.addAll(child.getChildren());
+	// }
+	//
+	// int assignedGrandchildren=0;
+	// for(SpatialTreeNode gc:grandchildren){
+	// if(gc.getRegionId()!=null){
+	// assignedGrandchildren++;
+	// }else if(gc.getChildren().size()>0){
+	// // unassigned grandchildren must be empty
+	// return false;
+	// }
+	// }
+	//
+	// if(assignedGrandchildren!=1){
+	// return false;
+	// }
+	//
+	// // can we recombine them??
+	//
+	// // what about a child which isn't split into grandchildren yet?
+	//
+	// // we'll probably commonly have a node, split into 2 children, with 1 child only split again.
+	//
+	// // what if we recombine something that's assigned later-on....
+	//
+	// return false;
+	// }
+
 	/**
 	 * Recombine a node's children if they are all assigned to the same region *and* they don't have children themselves
 	 * (we recursively call this anyway so we should still recursively recombine).
@@ -201,7 +197,7 @@ public class TreeBuilder {
 		return true;
 	}
 
-	private void addRecursively(SpatialTreeNodeWithGeometry node, int depth, Geometry geometry, String geometryId) {
+	private void addRecursively(SpatialTreeNodeWithGeometry node, int depth, Polygon originalGeometry, String geometryId) {
 		// check if node is already assigned, nodes are assigned to the first geometry
 		// that (a) totally encloses them, or (b) if the node is split to the finest granularity level,
 		// the first geometry they intersect
@@ -209,82 +205,87 @@ public class TreeBuilder {
 			return;
 		}
 
-		// Get intersection with the node. 
-		// We can quit if the intersection is empty and crucially all calculations 
+		// Get intersection with the node.
+		// We can quit if the intersection is empty and crucially all calculations
 		// within this node and its children only need to be done on the intersecting geometry,
 		// so we cut out massive amount of geometry - thereby speeding up processing massively
-		geometry = geometry.intersection(node.getGeometry());
-		if(geometry.isEmpty()){
+		Geometry intersection = originalGeometry.intersection(node.getGeometry());
+		if (intersection.isEmpty()) {
 			return;
 		}
-		
-		// If already we have children then pass down to them
-		if (node.getChildren().size() > 0) {
+
+		// Ensure geometry is a polygon(s).
+		// The intersection can sometimes create a GEOMETRYCOLLECTION containing polygons which gives an
+		// exception in the JTS contains function.
+		// Theoretically it might be able to create points and lines too.
+		LinkedList<Polygon> polygons = GeomUtils.getPolygons(intersection);
+		for (Polygon polygon : polygons) {
+
+			// If already we have children then pass down to them
+			if (node.getChildren().size() > 0) {
+				for (SpatialTreeNode child : node.getChildren()) {
+					addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, polygon, geometryId);
+				}
+				recombineChildrenIfPossible(node);
+				continue;
+			}
+
+			// No children already. Assign and return if:
+			// (a) a node is totally contained by the polygon or
+			// (b) we can't split the node anymore
+			Bounds b = node.getBounds();
+			boolean stopSplit = !isHorizontallySplittable(b) && !isVerticallySplittable(b);
+			if (!stopSplit) {
+				// The contains test is expensive, so we only do it after the cheap test
+				if (polygon.contains(node.getGeometry())) {
+					stopSplit = true;
+				}
+			}
+			if (stopSplit) {
+				node.setRegionType(geometryId);
+				node.setAssignedPriority(nextPolygonPriority);
+				continue;
+			}
+
+			if (!isHorizontallySplittable(b)) {
+				node.getChildren().addAll(getVerticalSplit(b));
+			} else if (!isVerticallySplittable(b)) {
+				node.getChildren().addAll(getHorizontalSplit(b));
+			} else {
+				// General case. Test both splits. If one gives a non-intersecting side, take that
+				// horizontal split along line of constant latitude
+				List<SpatialTreeNodeWithGeometry> hSplitList = getHorizontalSplit(b);
+				boolean hGood = isGoodSplit(polygon, hSplitList);
+
+				// vertical split along line of constant longitude
+				List<SpatialTreeNodeWithGeometry> vSplitList = getVerticalSplit(b);
+				boolean vGood = isGoodSplit(polygon, vSplitList);
+
+				List<SpatialTreeNodeWithGeometry> chosen = null;
+				if (hGood && !vGood) {
+					chosen = hSplitList;
+				} else if (!hGood && vGood) {
+					chosen = vSplitList;
+				} else if (depth % 2 == 0) {
+					chosen = hSplitList;
+				} else {
+					chosen = vSplitList;
+				}
+				node.getChildren().addAll(chosen);
+
+			}
+
+			// add to the child geometries after split
 			for (SpatialTreeNode child : node.getChildren()) {
-				addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, geometry, geometryId);
+				addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, polygon, geometryId);
 			}
+
 			recombineChildrenIfPossible(node);
-			return;
 		}
-
-		// No children already. Assign and return if:
-		// (a) a node is totally contained by the polygon or
-		// (b) we can't split the node anymore
-		Bounds b = node.getBounds();	
-		boolean stopSplit = !isHorizontallySplittable(b) && !isVerticallySplittable(b);
-		if(!stopSplit){
-			// The contains test is expensive, so we only do it after the cheap test
-			if(geometry.contains(node.getGeometry())){
-				stopSplit = true;
-			}
-		}
-		if (stopSplit) {
-			node.setRegionType(geometryId);
-			node.setAssignedPriority(nextPolygonPriority);
-			return;
-		}
-
-		if(!isHorizontallySplittable(b)){
-			node.getChildren().addAll(getVerticalSplit(b));	
-		}else if(!isVerticallySplittable(b)){
-			node.getChildren().addAll(getHorizontalSplit(b));				
-		}
-		else{
-			// General case. Test both splits. If one gives a non-intersecting side, take that
-			// horizontal split along line of constant latitude
-			List<SpatialTreeNodeWithGeometry> hSplitList = getHorizontalSplit(b);
-			boolean hGood = isGoodSplit(geometry, hSplitList);
-			
-			// vertical split along line of constant longitude
-			List<SpatialTreeNodeWithGeometry> vSplitList = getVerticalSplit(b);
-			boolean vGood = isGoodSplit(geometry, vSplitList);
-
-			List<SpatialTreeNodeWithGeometry> chosen =null;
-			if(hGood && !vGood){
-				chosen=hSplitList;
-			}
-			else if(!hGood && vGood){
-				chosen=vSplitList;			
-			}
-			else if(depth%2==0){
-				chosen=hSplitList;			
-			}else{
-				chosen=vSplitList;
-			}
-			node.getChildren().addAll(chosen);
-			
-		}
-
-		// add to the child geometries after split
-		for (SpatialTreeNode child : node.getChildren()) {
-			addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, geometry, geometryId);
-		}
-
-		recombineChildrenIfPossible(node);
 	}
 
-	private boolean isGoodSplit(Geometry geometry, List<SpatialTreeNodeWithGeometry> hSplitList) {
-		return isIntersecting(hSplitList.get(0), geometry)!=isIntersecting(hSplitList.get(1), geometry);
+	private boolean isGoodSplit(Polygon geometry, List<SpatialTreeNodeWithGeometry> hSplitList) {
+		return isIntersecting(hSplitList.get(0), geometry) != isIntersecting(hSplitList.get(1), geometry);
 	}
 
 	private List<SpatialTreeNodeWithGeometry> getVerticalSplit(Bounds b) {
@@ -357,7 +358,6 @@ public class TreeBuilder {
 
 	}
 
-
 	private synchronized SpatialTreeNode finishBuilding() {
 		// deep copy without the extra builder fields (i.e. so use the base bean class)
 		SpatialTreeNode ret = new SpatialTreeNode(root);
@@ -372,34 +372,36 @@ public class TreeBuilder {
 
 	/**
 	 * Build the spatial tree, giving priority to polygons based on their order within each feature collection.
+	 * 
 	 * @param featureCollections
 	 * @param minDiagonalLengthMetres
 	 * @return
 	 */
 	public static SpatialTreeNode build(List<FeatureCollection> featureCollections, double minDiagonalLengthMetres) {
 		LOGGER.info("Starting build of spatial tree");
-		
+
 		GeometryFactory geomFactory = GeomUtils.newGeomFactory();
 		TreeSet<TempPolygonRecord> prioritised = prioritisePolygons(featureCollections);
 
 		TreeBuilder builder = new TreeBuilder(geomFactory, minDiagonalLengthMetres);
-		long count=0;
+		long count = 0;
 		for (TempPolygonRecord poly : prioritised) {
 			// count points in polygon for logging only
-			long pointsCount=0;
-			for(List<LngLatAlt> list : poly.polygon.getCoordinates()){
-				pointsCount+=list.size();
+			long pointsCount = 0;
+			for (List<LngLatAlt> list : poly.polygon.getCoordinates()) {
+				pointsCount += list.size();
 			}
-			LOGGER.info("Adding polygon " + count++ + "/" + prioritised.size() + " containing " + pointsCount + " points to spatial tree with " + builder.root.countNodes() + " node(s)");
+			LOGGER.info("Adding polygon " + count++ + "/" + prioritised.size() + " containing " + pointsCount
+					+ " points to spatial tree with " + builder.root.countNodes() + " node(s)");
 			com.vividsolutions.jts.geom.Polygon jtsPolygon = GeomUtils.toJTS(geomFactory, poly.polygon);
 			builder.addRecursively(builder.root, 0, jtsPolygon, poly.stdRegionType);
-			builder.nextPolygonPriority++;			
-			//builder.add(jtsPolygon, poly.stdRegionType);
+			builder.nextPolygonPriority++;
+			// builder.add(jtsPolygon, poly.stdRegionType);
 		}
 
 		return builder.finishBuilding();
 	}
-	
+
 	private static class TempPolygonRecord implements Comparable<TempPolygonRecord> {
 		int fileIndex;
 		int positionInFile;
@@ -407,8 +409,7 @@ public class TreeBuilder {
 		String stdRegionType;
 		long polyNumber;
 
-		TempPolygonRecord(int fileIndex, int positionInFile, org.geojson.Polygon polygon, String stdRegionType,
-				long uniquePolyNumber) {
+		TempPolygonRecord(int fileIndex, int positionInFile, org.geojson.Polygon polygon, String stdRegionType, long uniquePolyNumber) {
 			this.fileIndex = fileIndex;
 			this.positionInFile = positionInFile;
 			this.polygon = polygon;
@@ -435,14 +436,13 @@ public class TreeBuilder {
 
 	}
 
-
 	private static TreeSet<TempPolygonRecord> prioritisePolygons(List<FeatureCollection> files) {
 
 		// prioritise all polygons and link them up to the local rules in their files
 		int nfiles = files.size();
 		TreeSet<TempPolygonRecord> prioritisedPolygons = new TreeSet<TempPolygonRecord>();
 		for (int ifile = 0; ifile < nfiles; ifile++) {
-			FeatureCollection fc= files.get(ifile);
+			FeatureCollection fc = files.get(ifile);
 			if (fc != null) {
 				int nfeatures = fc.getFeatures().size();
 				for (int iFeat = 0; iFeat < nfeatures; iFeat++) {
@@ -471,11 +471,12 @@ public class TreeBuilder {
 					}
 
 					if (GeomUtils.isGeoJSONPoly(feature.getGeometry())) {
-						prioritisedPolygons.add(new TempPolygonRecord(ifile, iFeat, (org.geojson.Polygon) feature.getGeometry(), regionType, prioritisedPolygons.size()));
+						prioritisedPolygons.add(new TempPolygonRecord(ifile, iFeat, (org.geojson.Polygon) feature.getGeometry(), regionType,
+								prioritisedPolygons.size()));
 					} else if (GeomUtils.isGeoJSONMultiPoly(feature.getGeometry())) {
-						for (org.geojson.Polygon polygon : GeomUtils.toGeoJSONPolygonList((org.geojson.MultiPolygon) feature.getGeometry())) {
-							prioritisedPolygons.add(new TempPolygonRecord(ifile, iFeat, polygon, regionType,
-									prioritisedPolygons.size()));
+						for (org.geojson.Polygon polygon : GeomUtils
+								.toGeoJSONPolygonList((org.geojson.MultiPolygon) feature.getGeometry())) {
+							prioritisedPolygons.add(new TempPolygonRecord(ifile, iFeat, polygon, regionType, prioritisedPolygons.size()));
 						}
 
 					} else {

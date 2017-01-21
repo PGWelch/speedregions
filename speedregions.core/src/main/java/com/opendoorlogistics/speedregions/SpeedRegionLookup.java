@@ -15,6 +15,7 @@
  */
 package com.opendoorlogistics.speedregions;
 
+import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
 import com.vividsolutions.jts.geom.Geometry;
 
@@ -37,4 +38,6 @@ public interface SpeedRegionLookup {
 	 * @return
 	 */
 	SpeedRuleLookup createLookupForEncoder(String encoder);
+	
+	SpatialTreeNode getTree();
 }

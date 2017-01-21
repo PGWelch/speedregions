@@ -9,14 +9,18 @@ import java.util.Random;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
 import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
 import com.opendoorlogistics.speedregions.excelshp.io.ShapefileIO;
+import com.opendoorlogistics.speedregions.excelshp.io.ExcelWriter;
+import com.opendoorlogistics.speedregions.excelshp.io.ExcelWriter.ExportTable;
 import com.opendoorlogistics.speedregions.excelshp.processing.ExcelShp2GeoJSONConverter;
 import com.opendoorlogistics.speedregions.excelshp.processing.ExcelShp2GeoJSONConverter.RuleConversionInfo;
 import com.opendoorlogistics.speedregions.utils.ExceptionUtils;
@@ -128,6 +132,7 @@ public class WizardApp {
 		
 		// do first processing to create maps
 		UncompiledSpeedRulesFile uncompiled=null;
+		final File outdir=new File(settings.getOutdirectory());
 		if(settings.isUseExcelShape()){
 			if(settings.getGridCellMetres() < AppConstants.MIN_GRID_METRES || settings.getGridCellMetres() > AppConstants.MAX_GRID_METRES){
 				showError("The lookup grid cell must be between " + AppConstants.MIN_GRID_METRES + " and " + AppConstants.MAX_GRID_METRES + " metres.");
@@ -146,7 +151,6 @@ public class WizardApp {
 				ExcelShp2GeoJSONConverter.createMergedPolygons(result.values());
 				
 				// Export shapefile
-				File outdir=new File(settings.getOutdirectory());
 				ShapefileIO.exportShapefile(result.values(), new File(outdir, "merged_speed_regions.shp"));
 				
 				// Create the uncompiled file. which is fed into the graph builder.
@@ -169,12 +173,23 @@ public class WizardApp {
 					
 		// now compile
 		try {
-			dependencies.buildGraph(settings, uncompiled);			
+			dependencies.buildGraph(settings, uncompiled, new Consumer<SpatialTreeNode>(){
+
+				@Override
+				public void accept(SpatialTreeNode t) {
+					LOGGER.info("Writing spatial tree nodes to Excel");
+					ExportTable table = ExcelWriter.exportTree(t);
+					LOGGER.info("...writing " + table.getRows().size() + " row(s)");
+					ExcelWriter.writeSheets(new File(outdir, "TreeNodes.xlsx"),table);
+					LOGGER.info("Finished writing spatial tree nodes to Excel");
+				}
+				
+			});
+			SwingUtils.showMessageOnEDT(null, "Finished building graph in directory " + settings.getOutdirectory(), "Finished", JOptionPane.OK_OPTION);
 		} catch (Exception e) {
 			showError(e);
 		}
 		
-		SwingUtils.showMessageOnEDT(null, "Finished building graph in directory " + settings.getOutdirectory(), "Finished", JOptionPane.OK_OPTION);
 	}
 	
 	/**
