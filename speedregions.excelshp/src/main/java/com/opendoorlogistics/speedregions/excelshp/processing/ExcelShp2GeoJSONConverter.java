@@ -165,8 +165,9 @@ public class ExcelShp2GeoJSONConverter {
 				throw new RuntimeException(prefix + "has non-unique " + SPFLD_ID + " (appears in multiple rows).");
 			}
 			
-			// Each rule is a region type.....
+			// Each rule is a region type and for the set encoder type
 			rule.getMatchRule().getRegionTypes().add(rule.getId());
+			rule.getMatchRule().getFlagEncoders().add(encoderType);
 			
 			ret.put(rule.getId(), rule);
 			
