@@ -7,7 +7,7 @@ public class AppSettings {
 	private String excelfile="";
 	private String shapefile="";
 	private String idFieldNameInShapefile="";
-	private double gridCellMetres=200;
+	private double gridCellMetres=100;
 	
 	public String getOutdirectory() {
 		return outdirectory;

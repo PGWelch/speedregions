@@ -33,6 +33,7 @@ import com.opendoorlogistics.speedregions.excelshp.app.AppSettings;
 import com.opendoorlogistics.speedregions.excelshp.app.SwingUtils;
 import com.opendoorlogistics.speedregions.excelshp.app.WizardApp;
 import com.opendoorlogistics.speedregions.utils.GeomUtils;
+import com.opendoorlogistics.speedregions.utils.ProcessTimer;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Point;
 
@@ -97,9 +98,11 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 			@Override
 			public void buildGraph(AppSettings settings, UncompiledSpeedRulesFile uncompiledSpeedRulesFile,Consumer<SpatialTreeNode> builtTreeCB) {
 				LOGGER.info("Compiling speed regions lookup");
+				ProcessTimer lookupTime = new ProcessTimer().start();
 				SpeedRegionLookup speedRegionLookup = SpeedRegionLookupBuilder.loadFromUncompiledSpeedRulesFile(uncompiledSpeedRulesFile,
 						settings.getGridCellMetres());
-
+				LOGGER.info("Speed region lookup took " + lookupTime.stop().secondsDuration() + " seconds to build");
+				
 				if(builtTreeCB!=null){
 					builtTreeCB.accept(speedRegionLookup.getTree());
 				}
@@ -112,10 +115,11 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 
 				LOGGER.info("Building graph");
 				
-				// need to set OSM file before calling init on Graphhopper as an exception will fire otherwise...
+				// need to set OSM file before calling init on Graphhopper as an exception will fire otherwise..
+				ProcessTimer graphTimer = new ProcessTimer().start();
 				mergedArgs.put("osmreader.osm", new File(settings.getPbfFile()).getAbsolutePath());
 				new GraphHopper().forDesktop().init(mergedArgs).setGraphHopperLocation(settings.getOutdirectory()).setEncodingManager(myEncodingManager).importOrLoad().close();
-
+				System.out.println("Graph took " + graphTimer.stop().secondsDuration() +" seconds to build");
 			}
 
 			@Override

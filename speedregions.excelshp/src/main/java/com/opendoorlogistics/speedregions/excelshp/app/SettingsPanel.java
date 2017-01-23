@@ -116,7 +116,7 @@ public class SettingsPanel extends JPanel{
 		add(fieldnamePanel);
 		
 		addSep();
-		gridSizeLabel = new JLabel("Lookup grid cell length in metres ");
+		gridSizeLabel = new JLabel("Lookup grid cell length in metres (recommended 100m) ");
 		gridSize = FileBrowserPanel.createTextField(Double.toString(settings.getGridCellMetres()), changeCB);
 		((PlainDocument)gridSize.getDocument()).setDocumentFilter(new DoubleDocumentFilter(this));
 		JPanel gridSizePanel = new JPanel();
@@ -245,7 +245,5 @@ public class SettingsPanel extends JPanel{
 		return JOptionPane.showConfirmDialog(null, panel, "Create road network graph", JOptionPane.OK_CANCEL_OPTION)==JOptionPane.OK_OPTION?panel.settings:null;
 	}
 	
-	public static void main(String [] args){
-		modal();
-	}
+
 }

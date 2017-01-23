@@ -33,6 +33,28 @@ class SpatialTreeNodeWithGeometry extends SpatialTreeNode{
 	private void initGeometry(GeometryFactory factory) {
 		this.envelope = getBounds().asEnvelope();
 		this.geometry = factory.toGeometry(envelope);
+		
+
+	}
+	
+	public Geometry getExpandedGeometry(GeometryFactory factory,double expandFraction){
+		// work out centre and width
+		Bounds bounds = getBounds();
+		double centreLng = 0.5*(bounds.getMinLng() + bounds.getMaxLng());
+		double centreLat = 0.5*(bounds.getMinLat() + bounds.getMaxLat());
+		double widthLng = bounds.getMaxLng() - bounds.getMinLng();
+		double heightLat = bounds.getMaxLat() - bounds.getMinLat();
+		
+		// get expanded bounds
+		double fraction = 0.5 + expandFraction*0.5;
+		double xMinLng = centreLng - widthLng * fraction;
+		double xMaxLng = centreLng + widthLng * fraction;
+		double xMinLat= centreLat - heightLat * fraction;
+		double xMaxLat = centreLat + heightLat * fraction;
+		Bounds xBounds = new Bounds(xMinLng, xMaxLng, xMinLat, xMaxLat);
+		Geometry xGeometry = factory.toGeometry(xBounds.asEnvelope());
+		
+		return xGeometry;
 	}
 	
 	/**

@@ -34,12 +34,14 @@ import com.opendoorlogistics.speedregions.beans.Bounds;
 import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
 import com.opendoorlogistics.speedregions.utils.GeomUtils;
 import com.opendoorlogistics.speedregions.utils.TextUtils;
+import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Polygon;
 
 public class TreeBuilder {
+	private static final double INTERSECTION_GEOM_SAFETY_FRACTION = 0.01;
 	private static final Logger LOGGER = Logger.getLogger(TreeBuilder.class.getName());
 
 	private final static double MIN_SIDES_RATIO = 0.25;
@@ -205,82 +207,153 @@ public class TreeBuilder {
 			return;
 		}
 
+		// Getting the intersection goes straight into costly operations so do envelopes first
+		Envelope ogEnvelope = originalGeometry.getEnvelopeInternal();
+		Envelope nEnvelope = node.getEnvelope();
+		if (!ogEnvelope.intersects(nEnvelope)) {
+			return;
+		}
+
+		// We're getting nodes on boundaries which aren't properly assigned.
+		// Get a slightly larger intersection geometry (e.g. 10% larger than node)
+		// and use this as the 'cut-down' / filtered geometry to test against
+		Geometry expandedNodeGeometry = node.getExpandedGeometry(geomFactory, INTERSECTION_GEOM_SAFETY_FRACTION);
+
 		// Get intersection with the node.
 		// We can quit if the intersection is empty and crucially all calculations
 		// within this node and its children only need to be done on the intersecting geometry,
-		// so we cut out massive amount of geometry - thereby speeding up processing massively
-		Geometry intersection = originalGeometry.intersection(node.getGeometry());
-		if (intersection.isEmpty()) {
-			return;
-		}
+		// so we cut out massive amount of geometry - thereby speeding up processing lots
+		Geometry intersection = originalGeometry.intersection(expandedNodeGeometry);
 
 		// Ensure geometry is a polygon(s).
 		// The intersection can sometimes create a GEOMETRYCOLLECTION containing polygons which gives an
 		// exception in the JTS contains function.
 		// Theoretically it might be able to create points and lines too.
 		LinkedList<Polygon> polygons = GeomUtils.getPolygons(intersection);
+		if (polygons.size() < originalGeometry.getNumGeometries()) {
+			LOGGER.info(
+					"...Had " + originalGeometry.getNumGeometries() + " input geometries but only " + polygons.size() + " polygons found.");
+		}
 		for (Polygon polygon : polygons) {
 
-			// If already we have children then pass down to them
-			if (node.getChildren().size() > 0) {
+			// Do proper intersection test for the individual polygon
+			if (polygon.intersects(node.getGeometry())) {
+
+				if (node.getChildren().size() == 0) {
+					
+					// No children already. Assign and return if:
+					// (a) a node is totally contained by the polygon or
+					// (b) we can't split the node anymore
+					if (isNodeAssign(node, polygon)) {
+						node.setRegionType(geometryId);
+						node.setAssignedPriority(nextPolygonPriority);
+
+						// No need to process any more polygons as node is assigned...
+						return;
+					}
+					else{
+						splitNode(node, depth, polygon);		
+					}
+				}
+				
+				// Must have child nodes at this point
+				
+//				// If already we have children then pass down to them
+//				if (node.getChildren().size() > 0) {
+//					for (SpatialTreeNode child : node.getChildren()) {
+//						addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, polygon, geometryId);
+//					}
+//				} else {
+//					// No children already. Assign and return if:
+//					// (a) a node is totally contained by the polygon or
+//					// (b) we can't split the node anymore
+//					if (isNodeAssign(node, polygon)) {
+//						node.setRegionType(geometryId);
+//						node.setAssignedPriority(nextPolygonPriority);
+//
+//						// No need to process any more polygons as node is assigned...
+//						return;
+//					}
+//					else{
+//	
+//						// Split and add to the child geometries after split
+//						splitNode(node, depth, polygon);
+//						for (SpatialTreeNode child : node.getChildren()) {
+//							addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, polygon, geometryId);
+//						}
+//					}
+//
+//				}
+				
+				
+				// Add to children
 				for (SpatialTreeNode child : node.getChildren()) {
 					addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, polygon, geometryId);
 				}
+				
+				// Try to recombine node and quit if this means the node is now assigned
 				recombineChildrenIfPossible(node);
-				continue;
-			}
-
-			// No children already. Assign and return if:
-			// (a) a node is totally contained by the polygon or
-			// (b) we can't split the node anymore
-			Bounds b = node.getBounds();
-			boolean stopSplit = !isHorizontallySplittable(b) && !isVerticallySplittable(b);
-			if (!stopSplit) {
-				// The contains test is expensive, so we only do it after the cheap test
-				if (polygon.contains(node.getGeometry())) {
-					stopSplit = true;
+				if (node.getRegionType() != null) {
+					return;
 				}
 			}
-			if (stopSplit) {
-				node.setRegionType(geometryId);
-				node.setAssignedPriority(nextPolygonPriority);
-				continue;
-			}
+		}
 
-			if (!isHorizontallySplittable(b)) {
-				node.getChildren().addAll(getVerticalSplit(b));
-			} else if (!isVerticallySplittable(b)) {
-				node.getChildren().addAll(getHorizontalSplit(b));
+	}
+
+	private boolean isNodeAssign(SpatialTreeNodeWithGeometry node, Polygon polygon) {
+		boolean assignNode = !isHorizontallySplittable(node.getBounds()) && !isVerticallySplittable(node.getBounds());
+		if (!assignNode) {
+			// The contains test is expensive, so we only do it after the cheap test
+			if (polygon.contains(node.getGeometry())) {
+				assignNode = true;
+			}
+		}
+		return assignNode;
+	}
+
+	/**
+	 * Split a node either horizontally or vertically (a test is done to try and estimate the best split) Only call this
+	 * method on a node which can split at least horizontally or vertically.
+	 * 
+	 * @param node
+	 * @param depth
+	 * @param polygon
+	 */
+	private void splitNode(SpatialTreeNodeWithGeometry node, int depth, Polygon polygon) {
+		Bounds b = node.getBounds();
+		boolean horizSplitOK = isHorizontallySplittable(b);
+		boolean verticalSplitOK = isVerticallySplittable(b);
+		if (!horizSplitOK && !verticalSplitOK) {
+			throw new RuntimeException("Only call this method on a node which can split at least horizontally or vertically");
+		}
+
+		if (!horizSplitOK) {
+			node.getChildren().addAll(getVerticalSplit(b));
+		} else if (!verticalSplitOK) {
+			node.getChildren().addAll(getHorizontalSplit(b));
+		} else {
+			// General case. Test both splits. If one gives a non-intersecting side, take that
+			// horizontal split along line of constant latitude
+			List<SpatialTreeNodeWithGeometry> hSplitList = getHorizontalSplit(b);
+			boolean hGood = isGoodSplit(polygon, hSplitList);
+
+			// vertical split along line of constant longitude
+			List<SpatialTreeNodeWithGeometry> vSplitList = getVerticalSplit(b);
+			boolean vGood = isGoodSplit(polygon, vSplitList);
+
+			List<SpatialTreeNodeWithGeometry> chosen = null;
+			if (hGood && !vGood) {
+				chosen = hSplitList;
+			} else if (!hGood && vGood) {
+				chosen = vSplitList;
+			} else if (depth % 2 == 0) {
+				chosen = hSplitList;
 			} else {
-				// General case. Test both splits. If one gives a non-intersecting side, take that
-				// horizontal split along line of constant latitude
-				List<SpatialTreeNodeWithGeometry> hSplitList = getHorizontalSplit(b);
-				boolean hGood = isGoodSplit(polygon, hSplitList);
-
-				// vertical split along line of constant longitude
-				List<SpatialTreeNodeWithGeometry> vSplitList = getVerticalSplit(b);
-				boolean vGood = isGoodSplit(polygon, vSplitList);
-
-				List<SpatialTreeNodeWithGeometry> chosen = null;
-				if (hGood && !vGood) {
-					chosen = hSplitList;
-				} else if (!hGood && vGood) {
-					chosen = vSplitList;
-				} else if (depth % 2 == 0) {
-					chosen = hSplitList;
-				} else {
-					chosen = vSplitList;
-				}
-				node.getChildren().addAll(chosen);
-
+				chosen = vSplitList;
 			}
+			node.getChildren().addAll(chosen);
 
-			// add to the child geometries after split
-			for (SpatialTreeNode child : node.getChildren()) {
-				addRecursively((SpatialTreeNodeWithGeometry) child, depth + 1, polygon, geometryId);
-			}
-
-			recombineChildrenIfPossible(node);
 		}
 	}
 

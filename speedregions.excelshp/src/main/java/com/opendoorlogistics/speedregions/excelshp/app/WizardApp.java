@@ -177,6 +177,7 @@ public class WizardApp {
 
 				@Override
 				public void accept(SpatialTreeNode t) {
+					// TODO CHECK FOR NODES WITH NO ASSIGNED REGION...
 					LOGGER.info("Writing spatial tree nodes to Excel");
 					ExportTable table = ExcelWriter.exportTree(t);
 					LOGGER.info("...writing " + table.getRows().size() + " row(s)");
