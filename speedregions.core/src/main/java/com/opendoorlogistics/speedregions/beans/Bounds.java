@@ -16,6 +16,7 @@
 package com.opendoorlogistics.speedregions.beans;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.opendoorlogistics.speedregions.utils.GeomUtils;
 import com.opendoorlogistics.speedregions.utils.TextUtils;
 import com.vividsolutions.jts.geom.Envelope;
 
@@ -99,4 +100,34 @@ public class Bounds extends JSONToString{
 		minLat = envelope.getMinY();
 		maxLat = envelope.getMaxY();
 	}
+	
+	@JsonIgnore
+	public Bounds [] getQuadSplit(){
+		double dLngCentre = GeomUtils.getLngCentre(this);	
+		double dLatCentre = GeomUtils.getLatCentre(this);
+		int i =0;
+		Bounds[] ret = new Bounds[4]; 
+		for (int lng = 0; lng <= 1; lng++) {
+			double lngMin = lng == 0 ? getMinLng() : dLngCentre;
+			double lngMax = lng == 0 ? dLngCentre : getMaxLng();
+			
+			for (int lat = 0; lat <= 1; lat++) {
+				double latMin = lat == 0 ? getMinLat() : dLatCentre;
+				double latMax = lat == 0 ? dLatCentre : getMaxLat();
+				ret[i++] = new Bounds(lngMin, lngMax, latMin, latMax);
+			}
+		}
+		return ret;
+	}
+	
+	@JsonIgnore
+	public double getWidthLng(){
+		return maxLng - minLng;
+	}
+	
+	@JsonIgnore
+	public double getHeightLat(){
+		return maxLat - minLat;
+	}
+		
 }

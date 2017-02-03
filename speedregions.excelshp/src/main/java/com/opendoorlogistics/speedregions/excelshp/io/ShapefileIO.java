@@ -4,6 +4,7 @@ import static com.opendoorlogistics.speedregions.utils.ExceptionUtils.asUnchecke
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -18,6 +19,7 @@ import java.util.logging.Logger;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
 import org.geotools.data.DefaultTransaction;
+import org.geotools.data.FeatureWriter;
 import org.geotools.data.Transaction;
 import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStore;
@@ -26,6 +28,7 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
+import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.jts.Geometries;
@@ -225,50 +228,102 @@ public class ShapefileIO {
 		return map;
 	}
 
-	public static void exportShapefile(Collection<RuleConversionInfo> merged, File file) {
-		LOGGER.info("Exporting shapefile to " + file.getAbsolutePath());
+//	public static void exportShapefile(Collection<RuleConversionInfo> merged, File file) {
+//		LOGGER.info("Exporting shapefile to " + file.getAbsolutePath());
+//
+//		// built the feature type
+//
+//		SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
+//		builder.setName("MergedSpeedRegions");
+//		builder.setCRS(DefaultGeographicCRS.WGS84);
+//
+//		// add geom first
+//		builder.add("the_geom", Geometries.POLYGON.getBinding());
+//
+//		// add other types
+//		String[] fieldnames = new String[] { "speed_profile_id" };
+//		builder.add(fieldnames[0], String.class);
+//		SimpleFeatureType type = builder.buildFeatureType();
+//
+//		try {
+//
+//			// build list of features
+//			List<SimpleFeature> features = new ArrayList<SimpleFeature>();
+//			for (RuleConversionInfo rule : merged) {
+//				for (int i = 0; i < rule.getMergedPolygons().getNumGeometries(); i++) {
+//					Polygon p = (Polygon) rule.getMergedPolygons().getGeometryN(i);
+//
+//					// write geom first
+//					SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(type);
+//					featureBuilder.add(p);
+//					featureBuilder.add(rule.getParentCollapsedRule().getId());
+//
+//					SimpleFeature feature = featureBuilder.buildFeature(null);
+//					features.add(feature);
+//				}
+//			}
+//
+//			writeShapefile(file, type, features);
+//
+//		} catch (Exception e) {
+//			throw ExceptionUtils.asUncheckedException(e);
+//		}
+//
+//		LOGGER.info("Finished exporting shapefile to " + file.getAbsolutePath());
+//
+//	}
+	
+	public static class IncrementalShapefileWriter{
+		private ShapefileDataStore newDataStore;
+		private FeatureWriter<SimpleFeatureType, SimpleFeature> writer ;
 		
-		// built the feature type
-
-		SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
-		builder.setName("MergedSpeedRegions");
-		builder.setCRS(DefaultGeographicCRS.WGS84);
-
-		// add geom first
-		builder.add("the_geom", Geometries.POLYGON.getBinding());
-
-		// add other types
-		String[] fieldnames = new String[] { "speed_profile_id" };
-		builder.add(fieldnames[0], String.class);
-		SimpleFeatureType type = builder.buildFeatureType();
-
-		try {
-
-			// build list of features
-			List<SimpleFeature> features = new ArrayList<SimpleFeature>();
-			for (RuleConversionInfo rule : merged) {
-				for (int i = 0; i < rule.getMergedPolygons().getNumGeometries(); i++) {
-					Polygon p = (Polygon) rule.getMergedPolygons().getGeometryN(i);
-
-					// write geom first
-					SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(type);
-					featureBuilder.add(p);
-					featureBuilder.add(rule.getParentCollapsedRule().getId());
-
-					SimpleFeature feature = featureBuilder.buildFeature(null);
-					features.add(feature);
+		public void start(File file, SimpleFeatureType type){
+			newDataStore = startShapefileWrite(file, type);
+			try {
+				writer = newDataStore.getFeatureWriterAppend(newDataStore.getTypeNames()[0],
+						Transaction.AUTO_COMMIT);
+			} catch (IOException e) {
+				throw ExceptionUtils.asUncheckedException(e);
+			}
+		}
+		
+		public void writeFeature(SimpleFeature feature){
+			try {
+				SimpleFeature toWrite = writer.next();
+				for (int i = 0; i < toWrite.getType().getAttributeCount(); i++) {
+					String name = toWrite.getType().getDescriptor(i).getLocalName();
+					toWrite.setAttribute(name, feature.getAttribute(name));
 				}
+
+				// copy over the user data
+				if (feature.getUserData().size() > 0) {
+					toWrite.getUserData().putAll(feature.getUserData());
+				}
+
+				// perform the write
+				writer.write();		
+			} catch (Exception e) {
+				throw ExceptionUtils.asUncheckedException(e);
+			}
+		
+		}
+		
+		public void close(){
+			try {
+				if(writer!=null){
+					writer.close();
+				}		
+			} catch (Exception e) {
+				throw ExceptionUtils.asUncheckedException(e);
 			}
 
-			// create shapefile
-			ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
-			Map<String, Serializable> params = new HashMap<String, Serializable>();
-			params.put("url", file.toURI().toURL());
-			params.put("create spatial index", Boolean.FALSE);
-			ShapefileDataStore newDataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
+		}
+	}
 
-			// create type in shapefile
-			newDataStore.createSchema(type);
+
+	public static void writeShapefile(File file, SimpleFeatureType type, List<SimpleFeature> features) {
+		try {
+			ShapefileDataStore newDataStore = startShapefileWrite(file, type);
 
 			Transaction transaction = new DefaultTransaction("create");
 			// String typeName = newDataStore.getTypeNames()[0];
@@ -292,9 +347,45 @@ public class ShapefileIO {
 		} catch (Exception e) {
 			throw ExceptionUtils.asUncheckedException(e);
 		}
-		
-		LOGGER.info("Finished exporting shapefile to " + file.getAbsolutePath());
+	}
+
+	private static ShapefileDataStore startShapefileWrite(File file, SimpleFeatureType type)  {
+		try {
+			// create shapefile
+			ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
+			Map<String, Serializable> params = new HashMap<String, Serializable>();
+			params.put("url", file.toURI().toURL());
+			params.put("create spatial index", Boolean.FALSE);
+			ShapefileDataStore newDataStore = (ShapefileDataStore) dataStoreFactory.createNewDataStore(params);
+
+			// create type in shapefile
+			newDataStore.createSchema(type);
+			return newDataStore;
+		} catch (Exception e) {
+			throw ExceptionUtils.asUncheckedException(e);
+		}
 
 	}
 
+	public static FluentSimpleFeatureTypeBuilder createWGS84FeatureTypeBuilder(String name, Geometries geomType){
+		FluentSimpleFeatureTypeBuilder builder = new FluentSimpleFeatureTypeBuilder();
+		builder.setName(name);
+		builder.setCRS(DefaultGeographicCRS.WGS84);
+
+		// add geom first
+		builder.add("the_geom", geomType.getBinding());
+		return builder;
+	}
+	
+	public static class FluentSimpleFeatureTypeBuilder extends SimpleFeatureTypeBuilder{
+	    public FluentSimpleFeatureTypeBuilder addStr(String name) {
+	    	super.add(name,String.class);
+	    	return this;
+	    }
+	    
+	    public FluentSimpleFeatureTypeBuilder addLong(String name) {
+	    	super.add(name,Long.class);
+	    	return this;
+	    }
+	}
 }

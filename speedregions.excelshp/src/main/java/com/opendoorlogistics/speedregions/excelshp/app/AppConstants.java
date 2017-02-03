@@ -5,4 +5,7 @@ public class AppConstants {
 	public static final double AVAILABLE_MEMORY_WARNING_TOLERANCE = 2;
 	public static final double MIN_GRID_METRES = 1;
 	public static final double MAX_GRID_METRES = 1000 * 10;
+	public static String DEFAULT_SPEEDS_DISPLAY_NAME = "#Default";
+	public static String NA = "n/a";
+
 }

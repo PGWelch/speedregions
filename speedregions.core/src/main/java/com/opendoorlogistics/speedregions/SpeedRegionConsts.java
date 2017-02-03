@@ -28,4 +28,9 @@ public class SpeedRegionConsts {
 	 * Tolerance in metres
 	 */
 	public static final String COMMAND_LINE_TOLERANCE= "speedregions.tolerance";
+	
+	public static final String REGION_ID_TAG_IN_OSM_WAY = "odl_speed_region_id";
+	
+//	public static final String SPEED_RULE_OBJECT_IN_OSM_WAY = "odl_speed_rule_object";
+
 }

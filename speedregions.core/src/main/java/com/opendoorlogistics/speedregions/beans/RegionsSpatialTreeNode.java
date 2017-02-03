@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.opendoorlogistics.speedregions.utils.AbstractNode;
 import com.opendoorlogistics.speedregions.utils.TextUtils;
 
 /**
@@ -26,26 +27,25 @@ import com.opendoorlogistics.speedregions.utils.TextUtils;
  * @author Phil
  *
  */
-public class SpatialTreeNode extends JSONToString{
-	private Bounds bounds;
+public class RegionsSpatialTreeNode extends AbstractNode{
 	private String regionType;
 	private long assignedPriority;
-	private List<SpatialTreeNode> children = new ArrayList<SpatialTreeNode>(0);
+	private List<RegionsSpatialTreeNode> children = new ArrayList<RegionsSpatialTreeNode>(0);
 
-	public SpatialTreeNode() {
+	public RegionsSpatialTreeNode() {
 
 	}
 
-	public SpatialTreeNode(SpatialTreeNode deepCopyThis) {
+	public RegionsSpatialTreeNode(RegionsSpatialTreeNode deepCopyThis) {
 		copyNonChildFields(deepCopyThis, this);
 
-		for (SpatialTreeNode childToCopy : deepCopyThis.getChildren()) {
-			this.children.add(new SpatialTreeNode(childToCopy));
+		for (RegionsSpatialTreeNode childToCopy : deepCopyThis.getChildren()) {
+			this.children.add(new RegionsSpatialTreeNode(childToCopy));
 		}
 
 	}
 
-	public static void copyNonChildFields(SpatialTreeNode deepCopyThis, SpatialTreeNode copyToThis) {
+	public static void copyNonChildFields(RegionsSpatialTreeNode deepCopyThis, RegionsSpatialTreeNode copyToThis) {
 		if (deepCopyThis.getBounds() != null) {
 			copyToThis.setBounds(new Bounds(deepCopyThis.getBounds()));
 		} else {
@@ -56,23 +56,16 @@ public class SpatialTreeNode extends JSONToString{
 		copyToThis.setAssignedPriority(deepCopyThis.getAssignedPriority());
 	}
 
-	public Bounds getBounds() {
-		return bounds;
-	}
-
-	public void setBounds(Bounds bounds) {
-		this.bounds = bounds;
-	}
 
 	/**
 	 * In the built quadtree children are sorted by highest priority (numerically lowest) first
 	 * @return
 	 */
-	public List<SpatialTreeNode> getChildren() {
+	public List<RegionsSpatialTreeNode> getChildren() {
 		return children;
 	}
 
-	public void setChildren(List<SpatialTreeNode> children) {
+	public void setChildren(List<RegionsSpatialTreeNode> children) {
 		this.children = children;
 	}
 
@@ -111,21 +104,27 @@ public class SpatialTreeNode extends JSONToString{
 	@Override
 	public String toString() {
 		// ensure we're not printing subclass fields like geometry which aren't json-friendly
-		return new SpatialTreeNode(this).toJSON();
+		return new RegionsSpatialTreeNode(this).toJSON();
 	}
 
 	
 
-	public static SpatialTreeNode fromJSON(String json) {
-		return TextUtils.fromJSON(json, SpatialTreeNode.class);
+	public static RegionsSpatialTreeNode fromJSON(String json) {
+		return TextUtils.fromJSON(json, RegionsSpatialTreeNode.class);
 	}
 	
+
 	@JsonIgnore
-	public long countNodes(){
-		long ret=1;
-		for(SpatialTreeNode child:children){
-			ret += child.countNodes();
-		}
-		return ret;
+	@Override
+	public int getNbChildren() {
+		return children.size();
 	}
+
+	@JsonIgnore
+	@Override
+	public AbstractNode getChild(int i) {
+		return children.get(i);
+	}
+	
+
 }

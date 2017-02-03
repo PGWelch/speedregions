@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
 import java.util.logging.Logger;
@@ -91,11 +92,11 @@ public class ExcelReader {
 	 * @param file
 	 * @return
 	 */
-	public static TreeMap<String,RawStringTable> readExcel(File file) {
+	public static List<RawStringTable> readExcel(File file) {
 		LOGGER.info("Reading Excel " + file.getAbsolutePath());
 		InputStream inp = null;
 		Workbook wb = null;
-		TreeMap<String,RawStringTable> tables = new TreeMap<String,RawStringTable>();
+		ArrayList<RawStringTable> tables = new ArrayList<>();
 		try {
 			inp = new FileInputStream(file);
 
@@ -106,7 +107,7 @@ public class ExcelReader {
 
 				RawStringTable rst = new RawStringTable(sheet.getSheetName());
 				//TreeMap<Integer, ColumnStats> columnStats = new TreeMap<>();
-				tables.put(TextUtils.stdString(sheet.getSheetName()), rst);
+				tables.add(rst);
 
 				int firstRow = sheet.getFirstRowNum();
 				int lastRow = sheet.getLastRowNum();

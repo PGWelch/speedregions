@@ -61,9 +61,14 @@ public class TextUtils {
 		}
 	}
 
-	public static void stringToFile(File file, String s) throws FileNotFoundException {
-		try(  PrintWriter out = new PrintWriter(file )  ){
-		    out.println( s );
+	public static void stringToFile(File file, String s)  {
+		try {
+			try(  PrintWriter out = new PrintWriter(file )  ){
+			    out.println( s );
+			}
+			
+		} catch (Exception e) {
+			throw ExceptionUtils.asUncheckedException(e);
 		}
 	}
 	
@@ -148,6 +153,11 @@ public class TextUtils {
 		return findProperty(feature, SpeedRegionConsts.REGION_TYPE_KEY);
 	}
 	
+	public static void setRegionType(Feature feature, String regionType){
+		String key = stdString(SpeedRegionConsts.REGION_TYPE_KEY);
+		feature.getProperties().put(key, regionType);
+	}
+	
 	/**
 	 * Finds regionid. Doesn't standardise it.
 	 * @param feature
@@ -163,4 +173,17 @@ public class TextUtils {
 		return null;
 	}
 	
+	public static String capitaliseFirstLetter(String s){
+		int n = s.length();
+		if(n==0){
+			return "";
+		}
+		
+		StringBuilder builder =new StringBuilder();
+		builder.append(s.substring(0, 1).toUpperCase());
+		if(n>1){
+			builder.append(s.substring(1, n));		
+		}
+		return builder.toString();
+	}
 }

@@ -15,7 +15,7 @@ import org.geojson.LngLatAlt;
 import org.geojson.MultiPolygon;
 
 import com.opendoorlogistics.speedregions.beans.Bounds;
-import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
+import com.opendoorlogistics.speedregions.beans.RegionsSpatialTreeNode;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
@@ -151,10 +151,10 @@ public class GeomUtils {
 	 * @param node
 	 * @return
 	 */
-	public static String toODLTable(SpatialTreeNode node,final boolean leafNodesOnly){
+	public static String toODLTable(RegionsSpatialTreeNode node,final boolean leafNodesOnly){
 		final StringBuilder builder = new StringBuilder();
 		class Recurser{
-			void recurse(SpatialTreeNode n){
+			void recurse(RegionsSpatialTreeNode n){
 				if(!leafNodesOnly || n.getChildren().size()==0){
 					if(builder.length()>0){
 						builder.append(System.lineSeparator());					
@@ -163,7 +163,7 @@ public class GeomUtils {
 					builder.append("\t");
 					builder.append(toWKT(toJTS(n.getBounds())));				
 				}
-				for(SpatialTreeNode child:n.getChildren()){
+				for(RegionsSpatialTreeNode child:n.getChildren()){
 					recurse(child);
 				}
 				
@@ -174,19 +174,36 @@ public class GeomUtils {
 		return builder.toString();
 	}
 
+	
 	public static LinkedList<Polygon> getPolygons(Geometry geometry){
-		LinkedList<Polygon> polygons = new LinkedList<>();
-		if(geometry instanceof Polygon){
-			polygons.add((Polygon)geometry);
+//		LinkedList<Polygon> polygons = new LinkedList<>();
+//		if(geometry instanceof Polygon){
+//			polygons.add((Polygon)geometry);
+//		}else if(geometry instanceof GeometryCollection){
+//			for(int i =0 ; i < geometry.getNumGeometries() ; i++){
+//				Geometry element = geometry.getGeometryN(i);
+//				if(element instanceof Polygon){
+//					polygons.add((Polygon)element);
+//				}
+//			}
+//		}
+		return getGeomsOfClass(geometry, Polygon.class);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> LinkedList<T> getGeomsOfClass(Geometry geometry, Class<? extends T> cls){
+		LinkedList<T> geoms = new LinkedList<>();
+		if(cls.isInstance(geometry)){
+			geoms.add((T)geometry);
 		}else if(geometry instanceof GeometryCollection){
 			for(int i =0 ; i < geometry.getNumGeometries() ; i++){
 				Geometry element = geometry.getGeometryN(i);
-				if(element instanceof Polygon){
-					polygons.add((Polygon)element);
+				if(cls.isInstance(element)){
+					geoms.add((T)element);
 				}
 			}
 		}
-		return polygons;
+		return geoms;
 	}
 	
 	public static org.geojson.MultiPolygon toGeoJSON(com.vividsolutions.jts.geom.MultiPolygon mp){
@@ -295,5 +312,20 @@ public class GeomUtils {
 		double dLngCentre = getLngCentre(b);
 		double height = greatCircleApprox(b.getMinLat(), dLngCentre, b.getMaxLat(), dLngCentre);
 		return height;
+	}
+	
+	public static Coordinate mean2d(Coordinate a, Coordinate b){
+		return new Coordinate(0.5*(a.x + b.x),0.5*(a.y + b.y));
+	}
+	
+	/**
+	 * Find all polygons and wrap in a multipolygon
+	 * @param geometry
+	 * @param factory
+	 * @return
+	 */
+	public static com.vividsolutions.jts.geom.MultiPolygon toJTSMultiPolygon(Geometry geometry, GeometryFactory factory){
+		LinkedList<Polygon> polygons = getPolygons(geometry);
+		return factory.createMultiPolygon(polygons.toArray(new Polygon[polygons.size()]));
 	}
 }

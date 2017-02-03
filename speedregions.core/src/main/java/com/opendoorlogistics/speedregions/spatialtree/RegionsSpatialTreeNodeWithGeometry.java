@@ -16,16 +16,16 @@
 package com.opendoorlogistics.speedregions.spatialtree;
 
 import com.opendoorlogistics.speedregions.beans.Bounds;
-import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
+import com.opendoorlogistics.speedregions.beans.RegionsSpatialTreeNode;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 
-class SpatialTreeNodeWithGeometry extends SpatialTreeNode{
+class RegionsSpatialTreeNodeWithGeometry extends RegionsSpatialTreeNode{
 	private Geometry geometry;
 	private Envelope envelope;
 
-	public SpatialTreeNodeWithGeometry(GeometryFactory factory, Bounds bounds){
+	public RegionsSpatialTreeNodeWithGeometry(GeometryFactory factory, Bounds bounds){
 		setBounds(bounds);
 		initGeometry(factory);
 	}
@@ -62,16 +62,16 @@ class SpatialTreeNodeWithGeometry extends SpatialTreeNode{
 	 * @param factory
 	 * @param node
 	 */
-	public SpatialTreeNodeWithGeometry(GeometryFactory factory , SpatialTreeNode node){
-		SpatialTreeNode.copyNonChildFields(node, this);
+	public RegionsSpatialTreeNodeWithGeometry(GeometryFactory factory , RegionsSpatialTreeNode node){
+		RegionsSpatialTreeNode.copyNonChildFields(node, this);
 		initGeometry(factory);
-		for(SpatialTreeNode childToCopy: node.getChildren()){
-			getChildren().add(new SpatialTreeNodeWithGeometry(factory,childToCopy));
+		for(RegionsSpatialTreeNode childToCopy: node.getChildren()){
+			getChildren().add(new RegionsSpatialTreeNodeWithGeometry(factory,childToCopy));
 		}
 	}
 	
-	public static SpatialTreeNodeWithGeometry createGlobal(GeometryFactory factory){
-		SpatialTreeNodeWithGeometry ret = new SpatialTreeNodeWithGeometry(factory,Bounds.createGlobal());
+	public static RegionsSpatialTreeNodeWithGeometry createGlobal(GeometryFactory factory){
+		RegionsSpatialTreeNodeWithGeometry ret = new RegionsSpatialTreeNodeWithGeometry(factory,Bounds.createGlobal());
 		ret.setBounds(Bounds.createGlobal());
 		return ret;
 	}

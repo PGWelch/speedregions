@@ -18,7 +18,7 @@ package com.opendoorlogistics.speedregions.commandline;
 import org.geojson.FeatureCollection;
 
 import com.opendoorlogistics.speedregions.SpeedRegionConsts;
-import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
+import com.opendoorlogistics.speedregions.beans.RegionsSpatialTreeNode;
 import com.opendoorlogistics.speedregions.spatialtree.TreeBuilder;
 
 /*
@@ -38,7 +38,7 @@ import com.opendoorlogistics.speedregions.spatialtree.TreeBuilder;
  */
 public class State {
 	FeatureCollection featureCollection = new FeatureCollection();
-	SpatialTreeNode compiled;
+	RegionsSpatialTreeNode compiled;
 	double minCellLength = SpeedRegionConsts.DEFAULT_MIN_CELL_LENGTH_METRES;
 	
 	void compile(){

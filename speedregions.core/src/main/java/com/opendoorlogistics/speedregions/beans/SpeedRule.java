@@ -87,20 +87,36 @@ public class SpeedRule extends JSONToString {
 	 * Apply rule and return speed in km/hr
 	 * @param highwayType
 	 * @param originalSpeedKmH
+	 * @param usedMaxSpeed If true, originalSpeedKmH is calculated from the max speed instead of the highway type
 	 * @return
 	 */
 	@JsonIgnore
 	public double applyRule(String highwayType, double originalSpeedKmH, boolean usedMaxSpeed) {
-
-		if(highwayType!=null && !usedMaxSpeed){
+		double highwayTypeSpeed = -1;
+		if(highwayType!=null){
 			Float speed = getSpeedsByRoadType().get(highwayType);
 			if (speed != null) {
-				return SpeedUnit.convert(speed, getSpeedUnit(), SpeedUnit.KM_PER_HOUR);
-			}			
+				highwayTypeSpeed= SpeedUnit.convert(speed, getSpeedUnit(), SpeedUnit.KM_PER_HOUR);
+			}						
 		}
+		
+		double multipliedSpeed = originalSpeedKmH * getMultiplier();
+		
+		// Use the highway type speed if its set and either (a) we didn't use max speed or (b) its slower than the max speed x multiplier
+		if(highwayTypeSpeed!=-1){
+			if(!usedMaxSpeed || highwayTypeSpeed < multipliedSpeed){
+				return highwayTypeSpeed;
+			}
+		}
+		
+//		if(highwayType!=null && !usedMaxSpeed){
+//			Float speed = getSpeedsByRoadType().get(highwayType);
+//			if (speed != null) {
+//				return SpeedUnit.convert(speed, getSpeedUnit(), SpeedUnit.KM_PER_HOUR);
+//			}			
+//		}
 
 		// If no rule set or we used the max speed, use the original speed and apply the multiplier
-		double ret = originalSpeedKmH * getMultiplier();
-		return ret;
+		return multipliedSpeed;
 	}
 }

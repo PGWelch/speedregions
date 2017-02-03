@@ -15,7 +15,7 @@
  */
 package com.opendoorlogistics.speedregions.spatialtree;
 
-import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
+import com.opendoorlogistics.speedregions.beans.RegionsSpatialTreeNode;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
@@ -23,11 +23,11 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 
 public class QueryProcessor {
-	private final SpatialTreeNodeWithGeometry root;
+	private final RegionsSpatialTreeNodeWithGeometry root;
 
-	public QueryProcessor(GeometryFactory factory, SpatialTreeNode root) {
+	public QueryProcessor(GeometryFactory factory, RegionsSpatialTreeNode root) {
 		// add geometry objects to the tree
-		this.root = new SpatialTreeNodeWithGeometry(factory, root);
+		this.root = new RegionsSpatialTreeNodeWithGeometry(factory, root);
 	}
 
 	public String query(Geometry edge) {
@@ -53,7 +53,7 @@ public class QueryProcessor {
 	 * @param node
 	 * @param obj
 	 */
-	private void queryRecurse(SpatialTreeNodeWithGeometry node, QueryObj obj) {
+	private void queryRecurse(RegionsSpatialTreeNodeWithGeometry node, QueryObj obj) {
 
 		if (node.getAssignedPriority() >= obj.currentBestPriority) {
 			// Can't beat the highest priority found so far so exclude the subtree
@@ -91,7 +91,7 @@ public class QueryProcessor {
 			// Do for loop rather than iterator so we don't allocate memory..
 			int n = node.getChildren().size();
 			for (int i = 0; i < n; i++) {
-				queryRecurse((SpatialTreeNodeWithGeometry) node.getChildren().get(i), obj);
+				queryRecurse((RegionsSpatialTreeNodeWithGeometry) node.getChildren().get(i), obj);
 			}
 		}
 

@@ -1,6 +1,6 @@
 package com.opendoorlogistics.speedregions.beans.files;
 
-import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
+import com.opendoorlogistics.speedregions.beans.RegionsSpatialTreeNode;
 
 /**
  * Speed rules and a compiled spatial tree of regions.
@@ -8,12 +8,12 @@ import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
  *
  */
 public class CompiledSpeedRulesFile extends AbstractSpeedRulesFile{
-	private SpatialTreeNode tree;
+	private RegionsSpatialTreeNode tree;
 	
-	public SpatialTreeNode getTree() {
+	public RegionsSpatialTreeNode getTree() {
 		return tree;
 	}
-	public void setTree(SpatialTreeNode quadtree) {
+	public void setTree(RegionsSpatialTreeNode quadtree) {
 		this.tree = quadtree;
 	}
 	

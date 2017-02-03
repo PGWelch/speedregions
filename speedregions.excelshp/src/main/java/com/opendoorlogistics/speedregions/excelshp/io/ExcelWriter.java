@@ -18,8 +18,11 @@ package com.opendoorlogistics.speedregions.excelshp.io;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -31,12 +34,25 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatTypes;
 import com.opendoorlogistics.speedregions.SpeedRegionConsts;
-import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
-import com.opendoorlogistics.speedregions.excelshp.io.ExcelWriter.ExportTable;
-import com.opendoorlogistics.speedregions.excelshp.io.ExcelWriter.ExportTableColumn;
+import com.opendoorlogistics.speedregions.beans.RegionsSpatialTreeNode;
+import com.opendoorlogistics.speedregions.excelshp.app.DetailedReportBuilder;
 import com.opendoorlogistics.speedregions.utils.GeomUtils;
 
 public class ExcelWriter {
+	private static final Logger LOGGER = Logger.getLogger(ExcelWriter.class.getName());
+
+	/**
+	 * See http://stackoverflow.com/questions/1102891/how-to-check-if-a-string-is-numeric-in-java
+	 * @param str
+	 * @return
+	 */
+	private static boolean isNumeric(String str)
+	{
+	  NumberFormat formatter = NumberFormat.getInstance();
+	  ParsePosition pos = new ParsePosition(0);
+	  formatter.parse(str, pos);
+	  return str.length() == pos.getIndex();
+	}
 	
 	private static void writeToCell(String value, JsonFormatTypes type, Cell cell) {
 		
@@ -51,8 +67,9 @@ public class ExcelWriter {
 		}
 		
 		if (value != null) {
+			boolean numeric = isNumeric(value);
 			boolean setToString = true;
-			if (value.length() > 0 && (type == JsonFormatTypes.NUMBER || type == JsonFormatTypes.INTEGER)) {
+			if (value.length() > 0 && (type == JsonFormatTypes.NUMBER || type == JsonFormatTypes.INTEGER || numeric)) {
 				setToString = false;
 				try {
 					cell.setCellValue(Double.parseDouble(value));
@@ -104,6 +121,22 @@ public class ExcelWriter {
 		private List<ExportTableColumn> header = new ArrayList<>();
 		private List<List<String>> rows = new ArrayList<>();
 		
+		public ExportTable(){
+			
+		}
+		
+		public ExportTable(RawStringTable rst){
+			this.name = rst.getName();
+			for(String s : rst.getHeaderRow()){
+				ExportTableColumn tc = new ExportTableColumn();
+				tc.formatType = JsonFormatTypes.STRING;
+				tc.name = s;
+				header.add(tc);
+			}
+			for(List<String> row:rst.getDataRows()){
+				rows.add(row);
+			}
+		}
 		
 		public List<ExportTableColumn> getHeader() {
 			return header;
@@ -193,9 +226,11 @@ public class ExcelWriter {
 				throw new RuntimeException(e2);
 			}
 		}
+		
+		LOGGER.info("Wrote Excel file " + file.getAbsolutePath());
 	}
 	
-	public static ExportTable exportTree(SpatialTreeNode spatialTree) {
+	public static ExportTable exportTree(RegionsSpatialTreeNode spatialTree) {
 		// write quadtree (leaves only?)
 		final ExportTable tree = new ExportTable();
 		tree.setName("SpatialTreeLeaves");
@@ -206,7 +241,7 @@ public class ExcelWriter {
 		
 		class Recurser{
 			int i;
-			void recurse(SpatialTreeNode n){
+			void recurse(RegionsSpatialTreeNode n){
 				if( n.getChildren().size()==0){
 					List<String> row = new ArrayList<>();
 					tree.getRows().add(row);
@@ -215,7 +250,7 @@ public class ExcelWriter {
 					row.add(Long.toString(n.getAssignedPriority()));
 					row.add(GeomUtils.toWKT(GeomUtils.toJTS(n.getBounds())));
 				}
-				for(SpatialTreeNode child:n.getChildren()){
+				for(RegionsSpatialTreeNode child:n.getChildren()){
 					recurse(child);
 				}
 				

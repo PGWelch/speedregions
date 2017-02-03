@@ -34,6 +34,8 @@ import com.opendoorlogistics.speedregions.beans.SpeedRule;
 import com.opendoorlogistics.speedregions.beans.SpeedUnit;
 import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
 import com.opendoorlogistics.speedregions.excelshp.app.AppInjectedDependencies;
+import com.opendoorlogistics.speedregions.excelshp.app.AppSettings;
+import com.opendoorlogistics.speedregions.excelshp.app.VehicleType;
 import com.opendoorlogistics.speedregions.excelshp.io.ExcelReader;
 import com.opendoorlogistics.speedregions.excelshp.io.IOStringConstants;
 import com.opendoorlogistics.speedregions.excelshp.io.RawStringTable;
@@ -52,11 +54,11 @@ public class ExcelShp2GeoJSONConverter {
 	private static final Logger LOGGER = Logger.getLogger(ExcelShp2GeoJSONConverter.class.getName());
 
 	private final AppInjectedDependencies dependencies;
-	private final String encoderType;
+	private final AppSettings settings;
 
-	public ExcelShp2GeoJSONConverter(String encoderType,AppInjectedDependencies speedProvider) {
+	public ExcelShp2GeoJSONConverter(AppSettings settings,AppInjectedDependencies speedProvider) {
 		this.dependencies = speedProvider;
-		this.encoderType = encoderType;
+		this.settings = settings;
 	}
 
 	private int findField(String fieldname, RawStringTable table){
@@ -68,11 +70,11 @@ public class ExcelShp2GeoJSONConverter {
 		return ret;
 	}
 	
-	private TreeMap<String,SpeedRule>  readSpeedRulesTable(TreeMap<String, RawStringTable> tables){
-		LOGGER.info("Reading " + IOStringConstants.SPEED_PROFILES_TABLENAME +" table");
+	private TreeMap<String,SpeedRule>  readSpeedRulesTable(String tablename,List<RawStringTable> tables){
+		LOGGER.info("Reading " + tablename +" table");
 		
 		TreeMap<String,SpeedRule> ret = new TreeMap<>();
-		RawStringTable table = findTable(tables, IOStringConstants.SPEED_PROFILES_TABLENAME);
+		RawStringTable table = findTable(tables, tablename);
 		
 		// get field indices (checking fields exist)
 		int iId = findField(SPFLD_ID, table);
@@ -91,7 +93,7 @@ public class ExcelShp2GeoJSONConverter {
 			// rows are always filled to the header length so don't need to check length
 			rule.setId(TextUtils.stdString(row.get(iId)));
 			
-			String prefix="Row " + line + " in table " + SPEED_PROFILES_TABLENAME + " with id \"" + rule.getId()+"\" ";
+			String prefix="Row " + line + " in table " + tablename + " with id \"" + rule.getId()+"\" ";
 		
 			// parse id
 			if(rule.getId().length()==0){
@@ -165,25 +167,25 @@ public class ExcelShp2GeoJSONConverter {
 				throw new RuntimeException(prefix + "has non-unique " + SPFLD_ID + " (appears in multiple rows).");
 			}
 			
-			// Each rule is a region type and for the set encoder type
-			rule.getMatchRule().getRegionTypes().add(rule.getId());
-			rule.getMatchRule().getFlagEncoders().add(encoderType);
-			
+
 			ret.put(rule.getId(), rule);
 			
 			line++;
 		}
 
-		LOGGER.info("Finished reading " + IOStringConstants.SPEED_PROFILES_TABLENAME +" table");		
+		LOGGER.info("Finished reading " + tablename +" table");		
 		return ret;
 	}
 
-	RawStringTable findTable(TreeMap<String, RawStringTable> tables, String tablename) {
-		RawStringTable table = tables.get(tablename);
-		if(table==null){
-			throw new RuntimeException("Cannot find Excel table named " + tablename);
+	RawStringTable findTable(Iterable<RawStringTable> tables, String tablename) {
+		for(RawStringTable table: tables){
+			if(TextUtils.equalsStd(tablename, table.getName())){
+				return table;
+			}
 		}
-		return table;
+
+		throw new RuntimeException("Cannot find Excel table named " + tablename);
+
 	}
 	
 	/**
@@ -195,9 +197,9 @@ public class ExcelShp2GeoJSONConverter {
 		private SpeedRule originalRule;
 		private SpeedRule parentCollapsedRule;
 	//	private Geometry geometry;
-		private MultiPolygon mergedPolygons;		
-		private LinkedList<Polygon> polygons = new LinkedList<>();
-		private TreeSet<String> brickIds = new TreeSet<>();
+	//	private MultiPolygon mergedPolygons;		
+	//	private LinkedList<Polygon> polygons = new LinkedList<>();
+	//	private TreeSet<String> brickIds = new TreeSet<>();
 		private TreeMap<String, Double> percentageSpeedChangeByRoadType = new TreeMap<>();
 
 		public SpeedRule getOriginalRule() {
@@ -207,12 +209,13 @@ public class ExcelShp2GeoJSONConverter {
 			this.originalRule = rule;
 		}
 
-		public TreeSet<String> getBrickIds() {
-			return brickIds;
-		}
-		public void setBrickIds(TreeSet<String> brickIds) {
-			this.brickIds = brickIds;
-		}
+//		public TreeSet<String> getBrickIds() {
+//			return brickIds;
+//		}
+//		public void setBrickIds(TreeSet<String> brickIds) {
+//			this.brickIds = brickIds;
+//		}
+		
 		public TreeMap<String, Double> getPercentageSpeedChangeByRoadType() {
 			return percentageSpeedChangeByRoadType;
 		}
@@ -225,165 +228,195 @@ public class ExcelShp2GeoJSONConverter {
 		public void setParentCollapsedRule(SpeedRule parentCollapsedRule) {
 			this.parentCollapsedRule = parentCollapsedRule;
 		}
-		public LinkedList<Polygon> getPolygons() {
-			return polygons;
-		}
-		public void setPolygons(LinkedList<Polygon> polygons) {
-			this.polygons = polygons;
-		}
-		public MultiPolygon getMergedPolygons() {
-			return mergedPolygons;
-		}
-		public void setMergedPolygons(MultiPolygon mergedPolygons) {
-			this.mergedPolygons = mergedPolygons;
-		}
-		
-		
+
 	}
 	
-	private void readBricksTable(TreeMap<String, RawStringTable> tables,
-			Map<String, RuleConversionInfo> rules ,
+	public static class BrickItem{
+		public String brickId;
+		public String speedProfileId;
+	}
+	
+	private List<BrickItem> readBricksTableToRules(List<RawStringTable> tables,
 			TreeMap<String, Geometry> shp){
 		LOGGER.info("Reading bricks table");
 		RawStringTable table = findTable(tables, BRICKS_TABLENAME);
 
 		int iBid = findField(BRFLD_BRICK_ID, table);
 		int iSPid = findField(BRFLD_SPEED_PROFILE_ID, table);
-		
-		PrecisionModel pm = new PrecisionModel(PrecisionModel.FLOATING_SINGLE);
-		GeometryPrecisionReducer reducer = new GeometryPrecisionReducer(pm);
 
-		// read and merge the rules
 		int line=1;
+		ArrayList<BrickItem> bricks = new ArrayList<>();
 		HashSet<String> usedBrickids = new HashSet<>();
 		for(List<String> row : table.getDataRows()){
 			// Validate brick id usage first
 			String prefix="Row " + (line++) + " in table " + BRICKS_TABLENAME;
-			String bid = TextUtils.stdString(row.get(iBid));
-			if(bid.length()==0){
+			BrickItem brick = new BrickItem();
+			brick.brickId = TextUtils.stdString(row.get(iBid));
+			if(brick.brickId.length()==0){
 				throw new RuntimeException(prefix+ " has empty " + BRFLD_BRICK_ID);
 			}
-			prefix += " with brick id \"" + bid + "\"";
+			prefix += " with brick id \"" + brick.brickId + "\"";
 			
 			// get brick and check not already used
-			Geometry brickGeometry = shp.get(bid);
+			Geometry brickGeometry = shp.get(brick.brickId);
 			if(brickGeometry==null){
 				throw new RuntimeException(prefix +  " has no corresponding brick with the same id in the shapefile (i.e. we don't have a polygon boundary for it).");
 			}
-			if(usedBrickids.contains(bid)){
+			if(usedBrickids.contains(brick.brickId)){
 				throw new RuntimeException(prefix +  " has already had its id used on a previous row");				
 			}
-			usedBrickids.add(bid);
+			usedBrickids.add(brick.brickId);
 			
+			brick.speedProfileId = TextUtils.stdString(row.get(iSPid));
+			bricks.add(brick);
+		}
+		
+		LOGGER.info("Finished reading bricks table");
+		return bricks;
+	}
+	
+	/**
+	 * Add the brick ids to the rules
+	 * @param tables
+	 * @param shp
+	 * @param rules
+	 */
+	private void applyBricksTableToRules(List<BrickItem> bricks,
+			String speedProfilesTableName,
+			Map<String, RuleConversionInfo> rules){
+		LOGGER.info("Reading bricks table");
+
+		for(BrickItem brickItem : bricks){
+
 			// get speed rule
-			String spid = TextUtils.stdString(row.get(iSPid));
+			String spid = TextUtils.stdString(brickItem.speedProfileId);
 			if(spid.length()==0){
 				continue;
 			}
 			RuleConversionInfo rule = rules.get(spid);
 			if(rule==null){
-				throw new RuntimeException(prefix +  " has " + BRFLD_SPEED_PROFILE_ID + " \"" + spid + "\" but no speed profile was found with this id.");
+				throw new RuntimeException("Brick " + brickItem.brickId +  " has " + BRFLD_SPEED_PROFILE_ID + " \"" + spid + "\" but no speed profile was found with this id in table "+ speedProfilesTableName + ".");
 			}
 				
-			// reducing precision to help prevent slivers etc
-			brickGeometry = reducer.reduce(brickGeometry);
-			ShapefileIO.throwIfNonPolygonOrMultiPolygon(bid, brickGeometry);
-			if(brickGeometry instanceof MultiPolygon){
-				for(int i =0 ; i < brickGeometry.getNumGeometries() ; i++){
-					rule.getPolygons().add((Polygon)brickGeometry.getGeometryN(i));
-				}
-			}
-			else{
-				rule.getPolygons().add((Polygon)brickGeometry);
-			}
+			// add brick id to the rule
+			rule.getOriginalRule().getMatchRule().getRegionTypes().add(brickItem.brickId);
+			rule.getParentCollapsedRule().getMatchRule().getRegionTypes().add(brickItem.brickId);
 
-			rule.getBrickIds().add(bid);
 		}
 		
 		LOGGER.info("Finished reading bricks table");
 	}
 
-	public static void createMergedPolygons(Iterable<RuleConversionInfo> merged){
-		for( RuleConversionInfo mrule  :merged){
-			if(mrule.getPolygons().size()==0){
-				LOGGER.info("Skipping polygon merge for rule with id \"" + mrule.getParentCollapsedRule().getId() + "\" as no polygons found for it.");
-				continue;
-			}
-			
-			LOGGER.info("...Merging " + mrule.getPolygons().size() +"  polygons in rule " + mrule.getParentCollapsedRule().getId());
-			Geometry unioned = CascadedPolygonUnion.union(mrule.getPolygons());
-			if(!ShapefileIO.isPolygonOrMultiPolygon(unioned)){
-				throw new RuntimeException("Merging all brick polygons for rule with id \"" + mrule.getParentCollapsedRule().getId() +" \" resulted in bad geometry which isn't a polygon.");
-			}
-			
-			if(unioned instanceof MultiPolygon){
-				mrule.setMergedPolygons((MultiPolygon)unioned);
-			}else{
-				mrule.setMergedPolygons( new GeometryFactory().createMultiPolygon(new Polygon[]{(Polygon)unioned}));
-			}
-			
-		}
-	}
-	public static FeatureCollection mergedRulesToFeatureCollection(Iterable<RuleConversionInfo> merged) {
+//	public static void createMergedPolygons(Iterable<RuleConversionInfo> merged){
+//		for( RuleConversionInfo mrule  :merged){
+//			if(mrule.getPolygons().size()==0){
+//				LOGGER.info("Skipping polygon merge for rule with id \"" + mrule.getParentCollapsedRule().getId() + "\" as no polygons found for it.");
+//				continue;
+//			}
+//			
+//			LOGGER.info("...Merging " + mrule.getPolygons().size() +"  polygons in rule " + mrule.getParentCollapsedRule().getId());
+//			Geometry unioned = CascadedPolygonUnion.union(mrule.getPolygons());
+//			if(!ShapefileIO.isPolygonOrMultiPolygon(unioned)){
+//				throw new RuntimeException("Merging all brick polygons for rule with id \"" + mrule.getParentCollapsedRule().getId() +" \" resulted in bad geometry which isn't a polygon.");
+//			}
+//			
+//			if(unioned instanceof MultiPolygon){
+//				mrule.setMergedPolygons((MultiPolygon)unioned);
+//			}else{
+//				mrule.setMergedPolygons( new GeometryFactory().createMultiPolygon(new Polygon[]{(Polygon)unioned}));
+//			}
+//			
+//		}
+//	}
+	
+	public static FeatureCollection shapefileToGeoJSON(TreeMap<String, Geometry> shp) {
 		FeatureCollection ret = new FeatureCollection();
-		for( RuleConversionInfo mrule  :merged){
-			if(mrule.getPolygons().size()==0){
-				LOGGER.info("Skipping rule with id \"" + mrule.getParentCollapsedRule().getId() + "\" as no polygons found for it.");
-				continue;
-			}
+		for( Map.Entry<String, Geometry> brick  :shp.entrySet()){
+//			if(mrule.getPolygons().size()==0){
+//				LOGGER.info("Skipping rule with id \"" + mrule.getParentCollapsedRule().getId() + "\" as no polygons found for it.");
+//				continue;
+//			}
 			
 			Feature feature = new Feature();
-			feature.setProperty(SpeedRegionConsts.REGION_TYPE_KEY,mrule.getOriginalRule().getId());
-			LOGGER.info("Creating geoJSON for rule " + mrule.getOriginalRule().getId());
-			GeoJsonObject geoJson = GeomUtils.toGeoJSON(mrule.getMergedPolygons());
+			feature.setProperty(SpeedRegionConsts.REGION_TYPE_KEY,brick.getKey());
+			LOGGER.info("Creating geoJSON for brick " + brick.getKey());
+			GeoJsonObject geoJson = GeomUtils.toGeoJSON(brick.getValue());
 			feature.setGeometry(geoJson);
 			ret.add(feature);			
 		}
 		return ret;
 	}
 	
-
+	public static class ConversionResult{
+		public TreeMap<VehicleType,TreeMap<String,RuleConversionInfo>> rules = new TreeMap<>();
+		public TreeMap<String, Geometry> shp;
+		public List<BrickItem> bricks;
+	}
 	
-	public TreeMap<String,RuleConversionInfo> convert(File excel, File shapefile, String shapefileIdFieldName){
+	public ConversionResult convert(File excel, File shapefile, String shapefileIdFieldName){
 		// Read Excel into tables of strings
-		TreeMap<String, RawStringTable> tables = ExcelReader.readExcel(excel);
+		List<RawStringTable> tables = ExcelReader.readExcel(excel);
 		
-		// Read speed profiles table and turn it into a list of speed rules
-		TreeMap<String, SpeedRule> originalRules = readSpeedRulesTable(tables);
-
-		// Collapse the parent relations in the speed rules and save in a map by id
-		TreeMap<String,RuleConversionInfo> details = new TreeMap<>();
-		for(Map.Entry<SpeedRule,SpeedRule> entry : new SpeedRulesProcesser().collapseParentRelations(originalRules.values()).entrySet()){
-			RuleConversionInfo info = new RuleConversionInfo();
-			info.setOriginalRule(entry.getKey());
-			info.setParentCollapsedRule(entry.getValue());
-			details.put(entry.getKey().getId(), info);
-		}
-
-
-
 		// Read shapefile
-		TreeMap<String, Geometry> shp = ShapefileIO.readShapefile(shapefile, shapefileIdFieldName);
+		ConversionResult ret = new ConversionResult();
+		ret.shp = ShapefileIO.readShapefile(shapefile, shapefileIdFieldName);
+		
+		// Read bricks
+		ret.bricks= readBricksTableToRules(tables, ret.shp);
 		
 		// HACK. Geotools initialisation replaces the logging handler with a new one with logging level warning.
 		// Set logging back to all...
 		dependencies.HACK_ReinitLogging();
 		LOGGER.info("Finished reading shapefile");
 
-		// Read bricks and merge geometries etc
-		readBricksTable(tables, details, shp);
+		for(VehicleType type:VehicleType.values()){
+			if(!settings.isEnabled(type) || !type.isSpeedRegionsSupported()){
+				continue;
+			}
+			
+			LOGGER.info("Check rules for vehicle type " + type.getGraphhopperName());
+			
+			String tablename = IOStringConstants.SPEED_PROFILES_TABLENAME +TextUtils.capitaliseFirstLetter(type.getGraphhopperName());
+			
+			// Read speed profiles table
+			TreeMap<String, SpeedRule> originalRules = readSpeedRulesTable(tablename,tables);
 
-		calculatePercentageSpeedChanges(details);
-		
+			// And a match rule for the vehicle type
+			for(SpeedRule sr:originalRules.values()){
+				sr.getMatchRule().getFlagEncoders().add(type.getGraphhopperName());
+			}
+
+			// Collapse the parent relations in the speed rules and save in a map by id
+			TreeMap<String,RuleConversionInfo> details = new TreeMap<>();
+			for(Map.Entry<SpeedRule,SpeedRule> entry : new SpeedRulesProcesser().collapseParentRelations(originalRules.values()).entrySet()){
+				RuleConversionInfo info = new RuleConversionInfo();
+				info.setOriginalRule(entry.getKey());
+				info.setParentCollapsedRule(entry.getValue());
+				details.put(entry.getKey().getId(), info);
+			}
+
+			// Read bricks and merge geometries etc
+			applyBricksTableToRules(ret.bricks,tablename, details);
+
+			if(dependencies.isDefaultSpeedsKnown(type.getGraphhopperName())){
+				calculatePercentageSpeedChanges(type,details);				
+			}
+			
+			ret.rules.put(type, details);
+						
+		}
+
 		LOGGER.info("Finished processing shapefile+Excel");
-		return details;
+
+		return ret;
 	}
 
-	private void calculatePercentageSpeedChanges(TreeMap<String, RuleConversionInfo> details) {
+	private void calculatePercentageSpeedChanges(VehicleType type,TreeMap<String, RuleConversionInfo> details) {
+		
 		// For the rules, get their percentage speed change by road type
 		for(RuleConversionInfo rule : details.values()){
 			for(String highwayType : IOStringConstants.ROAD_TYPES){
-				double defaultSpeed = dependencies.speedKmPerHour(encoderType, highwayType);
+				double defaultSpeed = dependencies.speedKmPerHour(type.getGraphhopperName(), highwayType);
 				if(defaultSpeed==0){
 					// edge case where road type is disabled anyway by default and we can't 
 					// report a percentage. Just ignore as probably irrelevant
@@ -403,11 +436,15 @@ public class ExcelShp2GeoJSONConverter {
 					throw new RuntimeException("Setting road type " + highwayType + " to have zero speed is not allowed.");
 				}
 				
-				double diff = newSpeed - defaultSpeed;
-				double percent = 100*(diff / defaultSpeed);
+				double percent = percentageChange(defaultSpeed, newSpeed);
 				rule.getPercentageSpeedChangeByRoadType().put(highwayType, percent);
 			}
 		}
 	}
 
+	public static double percentageChange(double originalSpeed, double newSpeed){
+		double diff = newSpeed - originalSpeed;
+		double percent = 100*(diff / originalSpeed);
+		return percent;
+	}
 }

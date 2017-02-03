@@ -25,9 +25,21 @@ import com.opendoorlogistics.speedregions.beans.SpeedUnit.SpeedUnitDeserialiser;
 
 @JsonDeserialize(using = SpeedUnitDeserialiser.class)	
 public enum SpeedUnit{
-	MILES_PER_HOUR,
-	KM_PER_HOUR;
+	MILES_PER_HOUR("miles"),
+	KM_PER_HOUR("km");
 	
+	private final String shorthand;
+	
+	
+	
+	public String getShorthand() {
+		return shorthand;
+	}
+
+	private SpeedUnit(String shorthand) {
+		this.shorthand = shorthand;
+	}
+
 	public static final SpeedUnit DEFAULT = KM_PER_HOUR;
 	
 	public static double convert(double value, SpeedUnit from, SpeedUnit to){
@@ -44,6 +56,14 @@ public enum SpeedUnit{
 		}
 	}
 	
+	public double convertToMe(double value, SpeedUnit from){
+		return convert(value, from, this);
+	}
+
+	public double convertKMToMe(double value){
+		return convertToMe(value,SpeedUnit.KM_PER_HOUR);
+	}
+
 	public static class SpeedUnitDeserialiser extends JsonDeserializer<SpeedUnit>{
 
 	    @Override

@@ -2,6 +2,8 @@ package com.opendoorlogistics.speedregions.excelshp.app;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -26,7 +28,6 @@ import javax.swing.JTextField;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.text.DocumentFilter;
 import javax.swing.text.PlainDocument;
 
 import com.opendoorlogistics.speedregions.excelshp.io.ShapefileIO;
@@ -39,12 +40,14 @@ public class SettingsPanel extends JPanel{
 	private final FileBrowserPanel pbf;
 	private final FileBrowserPanel outdir;
 	private final JCheckBox excelShp;
+	private final JCheckBox[] vehicleTypes = new JCheckBox[VehicleType.values().length];
 	private final FileBrowserPanel excel;
 	private final FileBrowserPanel shp;
 	private final JLabel idFieldLabel;
 	private final JComboBox<String> idField;
 	private final JLabel gridSizeLabel;
 	private final JTextField gridSize;
+	private final JCheckBox miles;
 	private AppSettings settings;
 
 	private static AppSettings load(){
@@ -86,15 +89,23 @@ public class SettingsPanel extends JPanel{
 		outdir = new FileBrowserPanel(0, "Output directory ", settings.getOutdirectory(), changeCB, true, "OK");
 		add(outdir);
 		
+		addVehicleTypesPanel();
+
 		addSep();
-		excelShp = new JCheckBox("Use Excel + shapefile containing SpeedRegions", settings.isUseExcelShape());
-		excelShp.addActionListener(new ActionListener() {
+		miles = new JCheckBox("Create reports in miles instead of km",settings.isReportInMiles());
+		ActionListener actionListener = new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				writePanelDataToSettings();
 			}
-		});
+		};
+		miles.addActionListener(actionListener);
+		add(miles);
+		
+		addSep();
+		excelShp = new JCheckBox("Use Excel + shapefile containing SpeedRegions", settings.isUseExcelShape());
+		excelShp.addActionListener(actionListener);
 		add(excelShp);
 		
 		addSep();
@@ -131,6 +142,25 @@ public class SettingsPanel extends JPanel{
 			}
 		}
 		writeSettingsToPanel();
+	}
+
+	private void addVehicleTypesPanel() {
+		addSep();
+		JPanel vehicleTypesPanel = new JPanel();
+		vehicleTypesPanel.setLayout(new BoxLayout(vehicleTypesPanel, BoxLayout.X_AXIS));
+		vehicleTypesPanel.add(new JLabel("Build for "));
+		for(VehicleType type: VehicleType.values()){
+			vehicleTypes[type.ordinal()] = new JCheckBox(type.getGraphhopperName() + (!type.isSpeedRegionsSupported()?" (speed regions unsupported)":"") +" ", settings.isEnabled(type));
+			vehicleTypes[type.ordinal()].addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					writePanelDataToSettings();
+				}
+			});	
+			vehicleTypesPanel.add(vehicleTypes[type.ordinal()]);
+		}
+		add(vehicleTypesPanel);
 	}
 
 	private void configureIdCombo() {
@@ -216,6 +246,12 @@ public class SettingsPanel extends JPanel{
 		settings.setExcelfile(excel.getFilename());
 		settings.setShapefile(shp.getFilename());
 		settings.setIdFieldNameInShapefile(idField.getEditor().getItem().toString());
+		settings.setReportInMiles(miles.isSelected());
+		
+		for(VehicleType type:VehicleType.values()){
+			settings.setEnabled(type,vehicleTypes[type.ordinal()].isSelected());
+		}
+		
 		try {
 			settings.setGridCellMetres(Double.parseDouble(gridSize.getText().trim()));
 		} catch (Exception e) {
@@ -235,6 +271,12 @@ public class SettingsPanel extends JPanel{
 		shp.setFilename(settings.getShapefile());
 		idField.setSelectedItem(settings.getIdFieldNameInShapefile());
 		gridSize.setText(Double.toString(settings.getGridCellMetres()));
+		miles.setSelected(settings.isReportInMiles());
+		
+		for(VehicleType type:VehicleType.values()){
+			vehicleTypes[type.ordinal()].setSelected(settings.isEnabled(type));
+		}
+		
 		update();
 
 		

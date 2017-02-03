@@ -1,5 +1,7 @@
 package com.opendoorlogistics.speedregions.excelshp.app;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class AppSettings {
 	private String pbfFile="";
 	private String outdirectory="";
@@ -7,7 +9,12 @@ public class AppSettings {
 	private String excelfile="";
 	private String shapefile="";
 	private String idFieldNameInShapefile="";
+	private boolean car=true;
+	private boolean motorcycle=false;
+	private boolean bike=false;
+	private boolean foot=false;
 	private double gridCellMetres=100;
+	private boolean reportInMiles = false;
 	
 	public String getOutdirectory() {
 		return outdirectory;
@@ -50,6 +57,79 @@ public class AppSettings {
 	}
 	public void setGridCellMetres(double gridCellMetres) {
 		this.gridCellMetres = gridCellMetres;
+	}
+	public boolean isCar() {
+		return car;
+	}
+	public void setCar(boolean car) {
+		this.car = car;
+	}
+	public boolean isMotorcycle() {
+		return motorcycle;
+	}
+	public void setMotorcycle(boolean motorcycle) {
+		this.motorcycle = motorcycle;
+	}
+	public boolean isBike() {
+		return bike;
+	}
+	public void setBike(boolean bike) {
+		this.bike = bike;
+	}
+	public boolean isFoot() {
+		return foot;
+	}
+	public void setFoot(boolean foot) {
+		this.foot = foot;
+	}
+	
+	@JsonIgnore
+	public boolean isEnabled(VehicleType type){
+		switch(type){
+		case CAR:
+			return isCar();
+		
+		case MOTORCYCLE:
+			return isMotorcycle();
+			
+		case BICYCLE:
+			return isBike();
+			
+		case FOOT:
+			return isFoot();
+		};
+		
+		throw new IllegalArgumentException();
+	}
+	
+	
+	@JsonIgnore
+	public void setEnabled(VehicleType type, boolean enabled){
+		switch(type){
+		case CAR:
+			setCar(enabled);
+			return;
+		
+		case MOTORCYCLE:
+			setMotorcycle(enabled);
+			return;
+			
+		case BICYCLE:
+			setBike(enabled);
+			return;
+			
+		case FOOT:
+			setFoot(enabled);
+			return;
+		};
+		
+		throw new IllegalArgumentException();
+	}
+	public boolean isReportInMiles() {
+		return reportInMiles;
+	}
+	public void setReportInMiles(boolean reportInMiles) {
+		this.reportInMiles = reportInMiles;
 	}
 	
 	

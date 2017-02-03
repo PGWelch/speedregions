@@ -5,7 +5,7 @@ import java.util.TreeMap;
 
 import com.opendoorlogistics.speedregions.beans.Bounds;
 import com.opendoorlogistics.speedregions.beans.JSONToString;
-import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
+import com.opendoorlogistics.speedregions.beans.RegionsSpatialTreeNode;
 import com.rits.cloning.Cloner;
 
 public class SpatialTreeStats extends JSONToString{
@@ -14,22 +14,22 @@ public class SpatialTreeStats extends JSONToString{
 	private long regionIds;
 	private TreeMap<String, Bounds> regionBounds = new TreeMap<>();
 	
-	public static long countNodes(SpatialTreeNode node){
+	public static long countNodes(RegionsSpatialTreeNode node){
 		long ret=1;
-		for(SpatialTreeNode child:node.getChildren()){
+		for(RegionsSpatialTreeNode child:node.getChildren()){
 			ret += countNodes(child);
 		}
 		return ret;
 	}
 
-	public static SpatialTreeStats build(SpatialTreeNode node){
+	public static SpatialTreeStats build(RegionsSpatialTreeNode node){
 		SpatialTreeStats ret = new SpatialTreeStats();
 		recurse(node, ret);
 		return ret;
 		
 	}
 	
-	private static void recurse(SpatialTreeNode node,SpatialTreeStats stats){
+	private static void recurse(RegionsSpatialTreeNode node,SpatialTreeStats stats){
 		if(node.getRegionType()!=null){
 			if(!stats.regionBounds.containsKey(node.getRegionType())){
 				stats.regionBounds.put(node.getRegionType(), Cloner.standard().deepClone(node.getBounds()));
@@ -42,7 +42,7 @@ public class SpatialTreeStats extends JSONToString{
 		if(node.getChildren().size()==0){
 			stats.leafNodes++;
 		}
-		for(SpatialTreeNode child:node.getChildren()){
+		for(RegionsSpatialTreeNode child:node.getChildren()){
 			recurse(child,stats);
 		}
 	}

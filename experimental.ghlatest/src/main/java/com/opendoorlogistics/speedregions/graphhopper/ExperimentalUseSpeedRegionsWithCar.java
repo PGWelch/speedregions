@@ -11,6 +11,7 @@ import com.graphhopper.routing.util.FlagEncoderFactory;
 import com.graphhopper.util.CmdArgs;
 import com.graphhopper.util.PMap;
 import com.graphhopper.util.shapes.GHPoint;
+import com.opendoorlogistics.speedregions.SpeedRegionConsts;
 import com.opendoorlogistics.speedregions.SpeedRegionLookup;
 import com.opendoorlogistics.speedregions.SpeedRegionLookup.SpeedRuleLookup;
 import com.opendoorlogistics.speedregions.SpeedRegionLookupBuilder;
@@ -82,7 +83,7 @@ public class ExperimentalUseSpeedRegionsWithCar {
 				if (estmCentre != null && lookup!=null) {
 					Point point = GeomUtils.newGeomFactory().createPoint(new Coordinate(estmCentre.lon, estmCentre.lat));
 					String regionId = lookup.findRegionType(point);
-					way.setTag("speed_region_id", regionId);
+					way.setTag(SpeedRegionConsts.REGION_ID_TAG_IN_OSM_WAY, regionId);
 				}
 
 				long val= super.handleWayTags(way, allowed, relationFlags);
@@ -104,7 +105,7 @@ public class ExperimentalUseSpeedRegionsWithCar {
 		        }
 
 		        // apply the rule
-				String regionId = way.getTag("speed_region_id");	
+				String regionId = way.getTag(SpeedRegionConsts.REGION_ID_TAG_IN_OSM_WAY);	
 				if (regionId != null && rules!=null) {
 					SpeedRule rule = rules.getSpeedRule(regionId);
 					if (rule == null) {

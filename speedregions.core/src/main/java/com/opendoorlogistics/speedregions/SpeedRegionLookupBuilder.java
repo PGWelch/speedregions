@@ -25,7 +25,7 @@ import java.util.TreeMap;
 import org.geojson.FeatureCollection;
 
 import com.opendoorlogistics.speedregions.SpeedRegionLookup.SpeedRuleLookup;
-import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
+import com.opendoorlogistics.speedregions.beans.RegionsSpatialTreeNode;
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
 import com.opendoorlogistics.speedregions.beans.files.CompiledSpeedRulesFile;
 import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
@@ -92,7 +92,7 @@ public class SpeedRegionLookupBuilder {
 			}
 
 			@Override
-			public SpatialTreeNode getTree() {
+			public RegionsSpatialTreeNode getTree() {
 				return compiled.getTree();
 			}
 		};
@@ -160,7 +160,7 @@ public class SpeedRegionLookupBuilder {
 				collections.add(file.getGeoJson());				
 			}
 		}
-		final SpatialTreeNode root=TreeBuilder.build(collections, minCellLengthMetres);
+		final RegionsSpatialTreeNode root=TreeBuilder.build(collections, minCellLengthMetres);
 	//	LOGGER.info("Built quadtree: " + SpatialTreeStats.build(root).toString());
 		
 		CompiledSpeedRulesFile built = new CompiledSpeedRulesFile();

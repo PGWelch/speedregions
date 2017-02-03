@@ -23,7 +23,7 @@ import org.geojson.Feature;
 
 import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatTypes;
 import com.opendoorlogistics.speedregions.SpeedRegionConsts;
-import com.opendoorlogistics.speedregions.beans.SpatialTreeNode;
+import com.opendoorlogistics.speedregions.beans.RegionsSpatialTreeNode;
 import com.opendoorlogistics.speedregions.excelshp.io.ExcelWriter;
 import com.opendoorlogistics.speedregions.excelshp.io.ExcelWriter.ExportTable;
 import com.opendoorlogistics.speedregions.excelshp.io.ExcelWriter.ExportTableColumn;

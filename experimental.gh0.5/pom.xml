@@ -13,13 +13,11 @@
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.3</version>
 				<configuration>
-					<!-- Set the java version -->
-					<source>1.7</source>
+					<encoding>UTF-8</encoding>
 					<target>1.7</target>
+					<source>1.7</source>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -38,17 +36,20 @@
 								<!-- would with the assembly plugin                                       -->
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<manifestEntries>
-										<Main-Class>com.opendoorlogistics.speedregions.graphhopperExperimentalUseSpeedRegionsWithCarGH05</Main-Class>
+										<Main-Class>com.opendoorlogistics.speedregions.graphhopper.ExperimentalUseSpeedRegionsWithCarGH05</Main-Class>
 									</manifestEntries>
 								</transformer>
+								<!-- This bit merges the various GeoTools META-INF/services files         -->
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
 							</transformers>
 						</configuration>
 					</execution>
 				</executions>
-			</plugin>
+			</plugin>		
 		</plugins>
 	</build>
-
+	
+	
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>

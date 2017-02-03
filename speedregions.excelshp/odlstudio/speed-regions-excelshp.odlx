@@ -1,0 +1,1129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Script Name="Show map" OptionId="Show map"
+  ScriptEditorType="WIZARD_GENERATED_EDITOR" launchMultiple="false"
+  overrideVisibleParameters="false" refreshButtonAlwaysEnabled="false"
+  showLastRefreshedTime="false" synchronised="false" userCanEdit="true">
+  <Adapter flags="0" id="Shapefile" userCanEdit="true">
+    <adapterType>NORMAL</adapterType>
+    <AdaptedTable FetchSourceFields="false" IsLimitedResults="false"
+      Join="false" MaxNumberRows="1000"
+      fromDatastore=":=Shapefile(&quot;Districts.odlrg&quot;)"
+      fromTable="" isBatchKey="false" isGroupBy="false"
+      isOptional="false" isReportKey="false" joinDatastore=""
+      joinTable="" name="Shapefile">
+      <flags>0</flags>
+      <AdaptedColumn from="name" isBatchKey="false" isGroupBy="false"
+        isOptional="false" isReportKey="false" name="brick_id"
+        sortField="NO" type="STRING" useFormula="false">
+        <flags>0</flags>
+      </AdaptedColumn>
+      <AdaptedColumn from="the_geom" isBatchKey="false"
+        isGroupBy="false" isOptional="false" isReportKey="false"
+        name="geom" sortField="NO" type="GEOM" useFormula="false">
+        <flags>0</flags>
+      </AdaptedColumn>
+      <FilterFormula/>
+    </AdaptedTable>
+  </Adapter>
+  <Adapter flags="0" id="BricksWithGeoms" userCanEdit="true">
+    <adapterType>NORMAL</adapterType>
+    <AdaptedTable FetchSourceFields="false" IsLimitedResults="false"
+      Join="false" MaxNumberRows="1000" fromDatastore="external"
+      fromTable="Bricks" isBatchKey="false" isGroupBy="false"
+      isOptional="false" isReportKey="false" joinDatastore=""
+      joinTable="" name="Bricks">
+      <flags>0</flags>
+      <AdaptedColumn from="id" isBatchKey="false" isGroupBy="false"
+        isOptional="false" isReportKey="false" name="id" sortField="NO"
+        type="STRING" useFormula="false">
+        <flags>0</flags>
+      </AdaptedColumn>
+      <AdaptedColumn from="speed_profile_id" isBatchKey="false"
+        isGroupBy="false" isOptional="false" isReportKey="false"
+        name="speed_profile_id" sortField="NO" type="STRING" useFormula="false">
+        <flags>0</flags>
+      </AdaptedColumn>
+      <AdaptedColumn from="invisible" isBatchKey="false"
+        isGroupBy="false" isOptional="false" isReportKey="false"
+        name="invisible" sortField="NO" type="LONG" useFormula="false">
+        <flags>0</flags>
+      </AdaptedColumn>
+      <AdaptedColumn formula="brickgeom(&quot;id&quot;)"
+        from="From column" isBatchKey="false" isGroupBy="false"
+        isOptional="false" isReportKey="false" name="Geometry"
+        sortField="NO" type="GEOM" useFormula="true">
+        <flags>0</flags>
+      </AdaptedColumn>
+      <AdaptedColumn
+        formula="if(brickgeom(&quot;id&quot;)!=null,geomborder(brickgeom(&quot;id&quot;),true),null)"
+        from="From column" isBatchKey="false" isGroupBy="false"
+        isOptional="false" isReportKey="false" name="Border"
+        sortField="NO" type="GEOM" useFormula="true">
+        <flags>0</flags>
+      </AdaptedColumn>
+      <FilterFormula>invisible!=1</FilterFormula>
+    </AdaptedTable>
+  </Adapter>
+  <Adapter flags="0" id="BricksMap" userCanEdit="true">
+    <adapterType>NORMAL</adapterType>
+    <AdaptedTable FetchSourceFields="true" IsLimitedResults="false"
+      Join="false" MaxNumberRows="1000" fromDatastore="BricksWithGeoms"
+      fromTable="Bricks" isBatchKey="false" isGroupBy="false"
+      isOptional="false" isReportKey="false" joinDatastore=""
+      joinTable="" name="drawables">
+      <flags>1920</flags>
+      <AdaptedColumn isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="Latitude"
+        sortField="NO" type="DOUBLE" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="Longitude"
+        sortField="NO" type="DOUBLE" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn
+        description="Geometry of the object. If this is not set a point is draw at the latitude-longitude instead."
+        formula="brickgeom(&quot;id&quot;)" from="Geometry"
+        isBatchKey="false" isGroupBy="false" isOptional="true"
+        isReportKey="false" name="Geometry" sortField="NO" type="GEOM" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn
+        description="The text of this field will be shown on the map beside the point."
+        from="id" isBatchKey="false" isGroupBy="false" isOptional="true"
+        isReportKey="false" name="Label" sortField="NO" type="STRING" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn formula="fillCol()" isBatchKey="false"
+        isGroupBy="false" isOptional="true" isReportKey="false"
+        name="Colour" sortField="NO" type="COLOUR" useFormula="true">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn
+        description="&lt;html>Name of the symbol used when drawing a point.&lt;br>If this is null a circle is used. &lt;br>Available symbols are &quot;triangle&quot;,&quot;inverted-triangle&quot;,&quot;diamond&quot;,&quot;square&quot;,&quot;pentagon&quot;,&quot;star&quot;,&quot;fat-star&quot;,&quot;hexagon&quot;,&quot;circle&quot;.&lt;/html>"
+        isBatchKey="false" isGroupBy="false" isOptional="true"
+        isReportKey="false" name="Symbol" sortField="NO" type="STRING" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn
+        description="Set to less than 1 if you want the object to be partially see-through, 0 for completely invisible."
+        formula="0.4" isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="Opaque"
+        sortField="NO" type="DOUBLE" useFormula="true">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn from="" isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="ColourKey"
+        sortField="NO" type="STRING" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn description="The width in pixels of the point."
+        formula="10" isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="PixelWidth"
+        sortField="NO" type="LONG" useFormula="true">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn
+        description="The font size for the name. A value of 0 takes the default size. Less than zero deactivates the label."
+        formula="10" isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="FontSize"
+        sortField="NO" type="LONG" useFormula="true">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn
+        description="Set this to 1 to draw an outline around the point or 0 otherwise."
+        formula="1" isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="DrawOutline"
+        sortField="NO" type="LONG" useFormula="true">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn
+        description="Use this field to override the colour shown in the legend for the object."
+        isBatchKey="false" isGroupBy="false" isOptional="true"
+        isReportKey="false" name="LegendColour" sortField="NO"
+        type="COLOUR" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn
+        description="This key field is used to populate the map's legend."
+        from="speed_profile_id" isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="LegendKey"
+        sortField="NO" type="STRING" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn
+        description="This key field is used to select objects when you are drawing the map by calling the image formula."
+        isBatchKey="false" isGroupBy="false" isOptional="true"
+        isReportKey="false" name="ImageFormulaKey" sortField="NO"
+        type="STRING" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="LabelGroupKey"
+        sortField="NO" type="STRING" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn formula="&quot;A&quot;" isBatchKey="false"
+        isGroupBy="false" isOptional="true" isReportKey="false"
+        name="NonOverlappingPolygonLayerGroupKey" sortField="NO"
+        type="STRING" useFormula="true">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="Tooltip"
+        sortField="NO" type="STRING" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn formula="1" isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="Selectable"
+        sortField="NO" type="LONG" useFormula="true">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false"
+        name="LabelPositioningOption" sortField="NO" type="STRING" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="LabelColour"
+        sortField="NO" type="COLOUR" useFormula="false">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn formula="0" isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="LabelPriority"
+        sortField="NO" type="LONG" useFormula="true">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn formula="0" isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="Flags"
+        sortField="NO" type="LONG" useFormula="true">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn formula="0" isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="MinZoom"
+        sortField="NO" type="LONG" useFormula="true">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <AdaptedColumn formula="1000" isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="MaxZoom"
+        sortField="NO" type="LONG" useFormula="true">
+        <flags>1</flags>
+      </AdaptedColumn>
+      <FilterFormula/>
+      <UserFormulae userCanEdit="true">definedfill() = lookup(speed_profile_id,"External,SpeedProfilesCar",c("id"),c("fill_colour"))</UserFormulae>
+      <UserFormulae userCanEdit="true">randcol()=if(len("speed_profile_id")&gt;0,randcolour("speed_profile_id"),colour(0.6,0.6,0.6))</UserFormulae>
+      <UserFormulae userCanEdit="true">basefillcol() =if(definedfill()!=null,definedfill(),randcol())</UserFormulae>
+      <UserFormulae userCanEdit="true">fillcol() =lerp(basefillcol(), randcolour("id"),0.1)</UserFormulae>
+    </AdaptedTable>
+  </Adapter>
+  <Option Name="Update bricks" OptionId="New option"
+    launchMultiple="false" overrideVisibleParameters="false"
+    refreshButtonAlwaysEnabled="false" showLastRefreshedTime="false"
+    synchronised="false" userCanEdit="true">
+    <EditorLabel>&lt;html&gt;&lt;i&gt;Add brick records to the Bricks table which are missing and delete records if the id is not present in the shapefile&lt;/i&gt;&lt;/html&gt;</EditorLabel>
+    <Adapter flags="0" id="AddMissingQuery" userCanEdit="true">
+      <adapterType>NORMAL</adapterType>
+      <AdaptedTable FetchSourceFields="false" IsLimitedResults="false"
+        Join="false" MaxNumberRows="1000" fromDatastore="Shapefile"
+        fromTable="Shapefile" isBatchKey="false" isGroupBy="false"
+        isOptional="false" isReportKey="false" joinDatastore=""
+        joinTable="" name="Shapefile">
+        <flags>0</flags>
+        <AdaptedColumn from="brick_id" isBatchKey="false"
+          isGroupBy="false" isOptional="false" isReportKey="false"
+          name="id" sortField="NO" type="STRING" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <FilterFormula>lookupcount(brick_id,"External,Bricks",c("id"))==0</FilterFormula>
+      </AdaptedTable>
+    </Adapter>
+    <Adapter flags="0" id="RemoveUnknownBricks" userCanEdit="true">
+      <adapterType>NORMAL</adapterType>
+      <AdaptedTable FetchSourceFields="false" IsLimitedResults="false"
+        Join="false" MaxNumberRows="1000" fromDatastore="external"
+        fromTable="Bricks" isBatchKey="false" isGroupBy="false"
+        isOptional="false" isReportKey="false" joinDatastore=""
+        joinTable="" name="Bricks">
+        <flags>0</flags>
+        <FilterFormula>lookupcount("id","Shapefile,Shapefile",c("brick_id"))==0</FilterFormula>
+      </AdaptedTable>
+    </Adapter>
+    <Instruction
+      component="com.opendoorlogistics.core.components.UpdateQueryComponent"
+      datastore="RemoveUnknownBricks" executionMode="-1"
+      userCanEdit="true" uuid="1939ca99-21c3-4355-b03f-c409372098d7">
+      <Config>
+        <UpdateQuery IsDeleteQuery="true"/>
+      </Config>
+      <Config>
+        <UpdateQuery IsDeleteQuery="true"/>
+      </Config>
+    </Instruction>
+    <Output datastore="AddMissingQuery" destinationTable="Bricks"
+      inputTable="Shapefile" type="APPEND_TO_EXISTING_TABLE" userCanEdit="false"/>
+  </Option>
+  <Option Name="Draw regions" OptionId="Show map1"
+    launchMultiple="false" overrideVisibleParameters="false"
+    refreshButtonAlwaysEnabled="false" showLastRefreshedTime="false"
+    synchronised="true" userCanEdit="true">
+    <Adapter flags="0" id="DrawRegionsMapQuery" userCanEdit="true">
+      <adapterType>NORMAL</adapterType>
+      <AdaptedTable FetchSourceFields="true" IsLimitedResults="false"
+        Join="false" MaxNumberRows="1000" fromDatastore="BricksMap"
+        fromTable="drawables" isBatchKey="false" isGroupBy="false"
+        isOptional="false" isReportKey="false" joinDatastore=""
+        joinTable="" name="drawables">
+        <flags>1920</flags>
+        <FilterFormula/>
+      </AdaptedTable>
+      <AdaptedTable FetchSourceFields="false" IsLimitedResults="false"
+        Join="false" MaxNumberRows="1000"
+        ShortEditorUINote="bad speed_profile_ids"
+        fromDatastore="BricksWithGeoms" fromTable="Bricks"
+        isBatchKey="false" isGroupBy="false" isOptional="false"
+        isReportKey="false" joinDatastore="" joinTable="" name="inactive-foreground">
+        <flags>1920</flags>
+        <AdaptedColumn isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="Latitude"
+          sortField="NO" type="DOUBLE" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="Longitude"
+          sortField="NO" type="DOUBLE" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn
+          description="Geometry of the object. If this is not set a point is draw at the latitude-longitude instead."
+          formula="if(brickgeom(&quot;id&quot;)!=null,geomborder(brickgeom(&quot;id&quot;),true),null)"
+          from="Border" isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="Geometry"
+          sortField="NO" type="GEOM" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn
+          description="The text of this field will be shown on the map beside the point."
+          from="" isBatchKey="false" isGroupBy="false" isOptional="true"
+          isReportKey="false" name="Label" sortField="NO" type="STRING" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn
+          formula="if(badspid(),&quot;red&quot;,&quot;black&quot;)"
+          isBatchKey="false" isGroupBy="false" isOptional="true"
+          isReportKey="false" name="Colour" sortField="NO" type="COLOUR" useFormula="true">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn
+          description="&lt;html>Name of the symbol used when drawing a point.&lt;br>If this is null a circle is used. &lt;br>Available symbols are &quot;triangle&quot;,&quot;inverted-triangle&quot;,&quot;diamond&quot;,&quot;square&quot;,&quot;pentagon&quot;,&quot;star&quot;,&quot;fat-star&quot;,&quot;hexagon&quot;,&quot;circle&quot;.&lt;/html>"
+          isBatchKey="false" isGroupBy="false" isOptional="true"
+          isReportKey="false" name="Symbol" sortField="NO" type="STRING" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn
+          description="Set to less than 1 if you want the object to be partially see-through, 0 for completely invisible."
+          formula="if(badspid(),0.9,0.65)" isBatchKey="false"
+          isGroupBy="false" isOptional="true" isReportKey="false"
+          name="Opaque" sortField="NO" type="DOUBLE" useFormula="true">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn from="" isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="ColourKey"
+          sortField="NO" type="STRING" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn description="The width in pixels of the point."
+          formula="if(badspid(),3,1)" isBatchKey="false"
+          isGroupBy="false" isOptional="true" isReportKey="false"
+          name="PixelWidth" sortField="NO" type="LONG" useFormula="true">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn
+          description="The font size for the name. A value of 0 takes the default size. Less than zero deactivates the label."
+          formula="10" isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="FontSize"
+          sortField="NO" type="LONG" useFormula="true">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn
+          description="Set this to 1 to draw an outline around the point or 0 otherwise."
+          formula="1" isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="DrawOutline"
+          sortField="NO" type="LONG" useFormula="true">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn
+          description="Use this field to override the colour shown in the legend for the object."
+          isBatchKey="false" isGroupBy="false" isOptional="true"
+          isReportKey="false" name="LegendColour" sortField="NO"
+          type="COLOUR" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn
+          description="This key field is used to populate the map's legend."
+          from="speed_profile_id" isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="LegendKey"
+          sortField="NO" type="STRING" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn
+          description="This key field is used to select objects when you are drawing the map by calling the image formula."
+          isBatchKey="false" isGroupBy="false" isOptional="true"
+          isReportKey="false" name="ImageFormulaKey" sortField="NO"
+          type="STRING" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="LabelGroupKey"
+          sortField="NO" type="STRING" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn formula="&quot;A&quot;" isBatchKey="false"
+          isGroupBy="false" isOptional="true" isReportKey="false"
+          name="NonOverlappingPolygonLayerGroupKey" sortField="NO"
+          type="STRING" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="Tooltip"
+          sortField="NO" type="STRING" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn formula="1" isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="Selectable"
+          sortField="NO" type="LONG" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false"
+          name="LabelPositioningOption" sortField="NO" type="STRING" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="LabelColour"
+          sortField="NO" type="COLOUR" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn formula="0" isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="LabelPriority"
+          sortField="NO" type="LONG" useFormula="true">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn formula="0" isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="Flags"
+          sortField="NO" type="LONG" useFormula="true">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn formula="if(badspid(),0,8)" isBatchKey="false"
+          isGroupBy="false" isOptional="true" isReportKey="false"
+          name="MinZoom" sortField="NO" type="LONG" useFormula="true">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn formula="1000" isBatchKey="false"
+          isGroupBy="false" isOptional="true" isReportKey="false"
+          name="MaxZoom" sortField="NO" type="LONG" useFormula="true">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <FilterFormula/>
+        <UserFormulae userCanEdit="true">definedfill(spid) = lookup(spid,"External,SpeedProfilesCar",c("id"),c("fill_colour"))</UserFormulae>
+        <UserFormulae userCanEdit="true">badspid() =  len(speed_profile_id)&gt;0 &amp;&amp; lookupcount(speed_profile_id, "External,SpeedProfilesCar", c("id"))==0</UserFormulae>
+      </AdaptedTable>
+    </Adapter>
+    <Instruction
+      component="com.opendoorlogistics.studio.uicomponents.map"
+      datastore="DrawRegionsMapQuery" executionMode="-1"
+      userCanEdit="true" uuid="17b9cfec-9655-4025-a156-7c62fdcd38b1">
+      <Config>
+        <MapConfig>
+          <useCustomTooltips>false</useCustomTooltips>
+        </MapConfig>
+      </Config>
+      <Config>
+        <MapConfig>
+          <useCustomTooltips>false</useCustomTooltips>
+        </MapConfig>
+      </Config>
+    </Instruction>
+  </Option>
+  <Option Name="Example journeys" OptionId="New option1"
+    launchMultiple="false" overrideVisibleParameters="false"
+    refreshButtonAlwaysEnabled="false" showLastRefreshedTime="false"
+    synchronised="false" userCanEdit="true">
+    <Adapter Name="GRAPH_DIR" flags="0" id="GRAPH_DIR" userCanEdit="true">
+      <adapterType>PARAMETER</adapterType>
+      <AdaptedTable FetchSourceFields="false" IsLimitedResults="false"
+        Join="false" MaxNumberRows="1000" fromDatastore="embeddedData"
+        fromTable="" isBatchKey="false" isGroupBy="false"
+        isOptional="false" isReportKey="false" name="Parameter">
+        <flags>1920</flags>
+        <AdaptedColumn isBatchKey="false" isGroupBy="false"
+          isOptional="false" isReportKey="false" name="ValueType"
+          sortField="NO" type="STRING" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="PromptType"
+          sortField="NO" type="STRING" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <AdaptedColumn isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="Value"
+          sortField="NO" type="STRING" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <Data>
+          <values>FILE_DIRECTORY</values>
+          <values>POPUP</values>
+          <values/>
+        </Data>
+        <FilterFormula/>
+      </AdaptedTable>
+      <AdaptedTable FetchSourceFields="false" IsLimitedResults="false"
+        Join="false" MaxNumberRows="1000" fromDatastore="embeddedData"
+        fromTable="" isBatchKey="false" isGroupBy="false"
+        isOptional="true" isReportKey="false" name="ParameterValues">
+        <flags>1921</flags>
+        <AdaptedColumn isBatchKey="false" isGroupBy="false"
+          isOptional="true" isReportKey="false" name="Value"
+          sortField="NO" type="STRING" useFormula="false">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <FilterFormula/>
+      </AdaptedTable>
+    </Adapter>
+    <Adapter flags="0" id="CalculateJourneys" userCanEdit="true">
+      <adapterType>NORMAL</adapterType>
+      <AdaptedTable FetchSourceFields="true" IsLimitedResults="false"
+        Join="false" MaxNumberRows="1000" fromDatastore="external"
+        fromTable="ExampleJourneys" isBatchKey="false" isGroupBy="false"
+        isOptional="false" isReportKey="false" joinDatastore=""
+        joinTable="" name="ExampleJourneys">
+        <flags>0</flags>
+        <AdaptedColumn formula="drivetime()" from="From column"
+          isBatchKey="false" isGroupBy="false" isOptional="false"
+          isReportKey="false" name="Time" sortField="NO" type="TIME" useFormula="true">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn
+          formula="routegeomuncached(from_latitude,from_longitude,to_latitude,to_longitude,sp(&quot;GRAPH_DIR&quot;))"
+          from="From column" isBatchKey="false" isGroupBy="false"
+          isOptional="false" isReportKey="false" name="RouteGeom"
+          sortField="NO" type="GEOM" useFormula="true">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn formula="timeRatio() " from="From column"
+          isBatchKey="false" isGroupBy="false" isOptional="false"
+          isReportKey="false" name="TimeRatio" sortField="NO"
+          type="DOUBLE" useFormula="true">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn
+          formula="if(timeratio()&lt;1,lerp(colour(0.1,0.8,0.1),colour(0.1,0.1,0.8),timeRatio()), lerp(colour(0.1,0.1,0.8),colour(0.8,0.1,0.1),timeRatio()-1))"
+          from="From column" isBatchKey="false" isGroupBy="false"
+          isOptional="false" isReportKey="false" name="RatioColour"
+          sortField="NO" type="COLOUR" useFormula="true">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <FilterFormula/>
+        <UserFormulae userCanEdit="true">drivetime()=drivingTimeUncached(from_latitude,from_longitude,to_latitude,to_longitude,sp("GRAPH_DIR"))) </UserFormulae>
+        <UserFormulae userCanEdit="true">hasEstimate() = len(human_estimate)&gt;0 &amp;&amp; human_estimate&gt;0</UserFormulae>
+        <UserFormulae userCanEdit="true">timeRatio() = if(hasEstimate(),drivetime()/human_estimate,1)</UserFormulae>
+      </AdaptedTable>
+    </Adapter>
+    <Adapter flags="0" id="ExampleJourneysReport" userCanEdit="true">
+      <adapterType>NORMAL</adapterType>
+      <AdaptedTable FetchSourceFields="false" IsLimitedResults="false"
+        Join="false" MaxNumberRows="1000"
+        fromDatastore="CalculateJourneys" fromTable="ExampleJourneys"
+        isBatchKey="false" isGroupBy="false" isOptional="false"
+        isReportKey="false" joinDatastore="" joinTable="" name="ExampleJourneys">
+        <flags>0</flags>
+        <AdaptedColumn from="from_name" isBatchKey="false"
+          isGroupBy="false" isOptional="false" isReportKey="false"
+          name="from_name" sortField="NO" type="STRING" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn from="from_latitude" isBatchKey="false"
+          isGroupBy="false" isOptional="false" isReportKey="false"
+          name="from_latitude" sortField="NO" type="DOUBLE" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn from="from_longitude" isBatchKey="false"
+          isGroupBy="false" isOptional="false" isReportKey="false"
+          name="from_longitude" sortField="NO" type="DOUBLE" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn from="to_name" isBatchKey="false"
+          isGroupBy="false" isOptional="false" isReportKey="false"
+          name="to_name" sortField="NO" type="STRING" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn from="to_latitude" isBatchKey="false"
+          isGroupBy="false" isOptional="false" isReportKey="false"
+          name="to_latitude" sortField="NO" type="DOUBLE" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn from="to_longitude" isBatchKey="false"
+          isGroupBy="false" isOptional="false" isReportKey="false"
+          name="to_longitude" sortField="NO" type="DOUBLE" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn from="Time" isBatchKey="false" isGroupBy="false"
+          isOptional="false" isReportKey="false" name="time"
+          sortField="NO" type="TIME" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn from="human_estimate" isBatchKey="false"
+          isGroupBy="false" isOptional="false" isReportKey="false"
+          name="human_estimate" sortField="NO" type="TIME" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn from="TimeRatio" isBatchKey="false"
+          isGroupBy="false" isOptional="false" isReportKey="false"
+          name="ratio_of_estimate" sortField="NO" type="DOUBLE" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn from="filter_key" isBatchKey="false"
+          isGroupBy="false" isOptional="false" isReportKey="false"
+          name="filter_key" sortField="NO" type="STRING" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <AdaptedColumn from="RatioColour" isBatchKey="false"
+          isGroupBy="false" isOptional="false" isReportKey="false"
+          name="row-font-colour" sortField="NO" type="COLOUR" useFormula="false">
+          <flags>0</flags>
+        </AdaptedColumn>
+        <FilterFormula/>
+      </AdaptedTable>
+    </Adapter>
+    <Option Name="Show map" OptionId="Show map2" launchMultiple="true"
+      overrideVisibleParameters="false"
+      refreshButtonAlwaysEnabled="true" showLastRefreshedTime="true"
+      synchronised="false" userCanEdit="true">
+      <Adapter flags="0" id="Mapinput" userCanEdit="true">
+        <adapterType>NORMAL</adapterType>
+        <AdaptedTable FetchSourceFields="true" IsLimitedResults="false"
+          Join="false" MaxNumberRows="1000" ShortEditorUINote="bricks"
+          fromDatastore="BricksMap" fromTable="drawables"
+          isBatchKey="false" isGroupBy="false" isOptional="true"
+          isReportKey="false" joinDatastore="" joinTable="" name="inactive-background">
+          <flags>1921</flags>
+          <AdaptedColumn
+            description="The text of this field will be shown on the map beside the point."
+            isBatchKey="false" isGroupBy="false" isOptional="true"
+            isReportKey="false" name="Label" sortField="NO"
+            type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            formula="&quot;#Bricks&quot; &amp; speed_profile_id"
+            from="From column" isBatchKey="false" isGroupBy="false"
+            isOptional="false" isReportKey="false" name="LegendKey"
+            sortField="NO" type="STRING" useFormula="true">
+            <flags>0</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="0.25" from="From column"
+            isBatchKey="false" isGroupBy="false" isOptional="false"
+            isReportKey="false" name="Opaque" sortField="NO"
+            type="DOUBLE" useFormula="true">
+            <flags>0</flags>
+          </AdaptedColumn>
+          <FilterFormula/>
+        </AdaptedTable>
+        <AdaptedTable FetchSourceFields="false" IsLimitedResults="false"
+          Join="false" MaxNumberRows="1000"
+          fromDatastore="CalculateJourneys" fromTable="ExampleJourneys"
+          isBatchKey="false" isGroupBy="false" isOptional="false"
+          isReportKey="false" joinDatastore="" joinTable="" name="drawables">
+          <flags>1920</flags>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Latitude"
+            sortField="NO" type="DOUBLE" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Longitude"
+            sortField="NO" type="DOUBLE" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="Geometry of the object. If this is not set a point is draw at the latitude-longitude instead."
+            from="RouteGeom" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Geometry"
+            sortField="NO" type="GEOM" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="The text of this field will be shown on the map beside the point."
+            formula="round2second(Time) &amp; &quot; (&quot;&amp; timeratio1dp()  &amp;&quot;)&quot;)"
+            from="" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Label"
+            sortField="NO" type="STRING" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="&quot;#a9a9a9&quot;"
+            from="RatioColour" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Colour"
+            sortField="NO" type="COLOUR" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="&lt;html>Name of the symbol used when drawing a point.&lt;br>If this is null a circle is used. &lt;br>Available symbols are &quot;triangle&quot;,&quot;inverted-triangle&quot;,&quot;diamond&quot;,&quot;square&quot;,&quot;pentagon&quot;,&quot;star&quot;,&quot;fat-star&quot;,&quot;hexagon&quot;,&quot;circle&quot;.&lt;/html>"
+            isBatchKey="false" isGroupBy="false" isOptional="true"
+            isReportKey="false" name="Symbol" sortField="NO"
+            type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="Set to less than 1 if you want the object to be partially see-through, 0 for completely invisible."
+            formula="1.0" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Opaque"
+            sortField="NO" type="DOUBLE" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="ColourKey"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn description="The width in pixels of the point."
+            formula="5" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="PixelWidth"
+            sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="The font size for the name. A value of 0 takes the default size. Less than zero deactivates the label."
+            formula="12" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="FontSize"
+            sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="Set this to 1 to draw an outline around the point or 0 otherwise."
+            formula="1" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="DrawOutline"
+            sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="Use this field to override the colour shown in the legend for the object."
+            isBatchKey="false" isGroupBy="false" isOptional="true"
+            isReportKey="false" name="LegendColour" sortField="NO"
+            type="COLOUR" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="This key field is used to populate the map's legend."
+            from="filter_key" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="LegendKey"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="This key field is used to select objects when you are drawing the map by calling the image formula."
+            isBatchKey="false" isGroupBy="false" isOptional="true"
+            isReportKey="false" name="ImageFormulaKey" sortField="NO"
+            type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="LabelGroupKey"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false"
+            name="NonOverlappingPolygonLayerGroupKey" sortField="NO"
+            type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn from="" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Tooltip"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="1" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="Selectable" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false"
+            name="LabelPositioningOption" sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="LabelColour"
+            sortField="NO" type="COLOUR" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="0" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="LabelPriority" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="0" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="Flags" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="0" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="MinZoom" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="1000" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="MaxZoom" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <FilterFormula/>
+          <UserFormulae userCanEdit="true">timeratio1dp() = decimalformat("0.#",timeratio)</UserFormulae>
+        </AdaptedTable>
+        <AdaptedTable FetchSourceFields="false" IsLimitedResults="false"
+          Join="false" MaxNumberRows="1000" ShortEditorUINote="froms"
+          fromDatastore="external" fromTable="ExampleJourneys"
+          isBatchKey="false" isGroupBy="false" isOptional="true"
+          isReportKey="false" joinDatastore="" joinTable="" name="inactive-foreground">
+          <flags>1921</flags>
+          <AdaptedColumn from="from_latitude" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="Latitude" sortField="NO" type="DOUBLE" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn from="from_longitude" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="Longitude" sortField="NO" type="DOUBLE" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="Geometry of the object. If this is not set a point is draw at the latitude-longitude instead."
+            isBatchKey="false" isGroupBy="false" isOptional="true"
+            isReportKey="false" name="Geometry" sortField="NO"
+            type="GEOM" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="The text of this field will be shown on the map beside the point."
+            from="from_name" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Label"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="&quot;green&quot;" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="Colour" sortField="NO" type="COLOUR" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="&lt;html>Name of the symbol used when drawing a point.&lt;br>If this is null a circle is used. &lt;br>Available symbols are &quot;triangle&quot;,&quot;inverted-triangle&quot;,&quot;diamond&quot;,&quot;square&quot;,&quot;pentagon&quot;,&quot;star&quot;,&quot;fat-star&quot;,&quot;hexagon&quot;,&quot;circle&quot;.&lt;/html>"
+            from="" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Symbol"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="Set to less than 1 if you want the object to be partially see-through, 0 for completely invisible."
+            formula="1.0" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Opaque"
+            sortField="NO" type="DOUBLE" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="ColourKey"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn description="The width in pixels of the point."
+            formula="10" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="PixelWidth"
+            sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="The font size for the name. A value of 0 takes the default size. Less than zero deactivates the label."
+            formula="12" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="FontSize"
+            sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="Set this to 1 to draw an outline around the point or 0 otherwise."
+            formula="1" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="DrawOutline"
+            sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="Use this field to override the colour shown in the legend for the object."
+            isBatchKey="false" isGroupBy="false" isOptional="true"
+            isReportKey="false" name="LegendColour" sortField="NO"
+            type="COLOUR" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="This key field is used to populate the map's legend."
+            formula="" from="filter_key" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="LegendKey" sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="This key field is used to select objects when you are drawing the map by calling the image formula."
+            isBatchKey="false" isGroupBy="false" isOptional="true"
+            isReportKey="false" name="ImageFormulaKey" sortField="NO"
+            type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="LabelGroupKey"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false"
+            name="NonOverlappingPolygonLayerGroupKey" sortField="NO"
+            type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Tooltip"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="1" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="Selectable" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false"
+            name="LabelPositioningOption" sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="LabelColour"
+            sortField="NO" type="COLOUR" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="0" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="LabelPriority" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="0" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="Flags" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="0" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="MinZoom" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="1000" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="MaxZoom" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <FilterFormula/>
+        </AdaptedTable>
+        <AdaptedTable FetchSourceFields="false" IsLimitedResults="false"
+          Join="false" MaxNumberRows="1000" ShortEditorUINote="tos"
+          fromDatastore="external" fromTable="ExampleJourneys"
+          isBatchKey="false" isGroupBy="false" isOptional="true"
+          isReportKey="false" joinDatastore="" joinTable="" name="inactive-foreground">
+          <flags>1921</flags>
+          <AdaptedColumn from="to_latitude" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="Latitude" sortField="NO" type="DOUBLE" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn from="to_longitude" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="Longitude" sortField="NO" type="DOUBLE" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="Geometry of the object. If this is not set a point is draw at the latitude-longitude instead."
+            isBatchKey="false" isGroupBy="false" isOptional="true"
+            isReportKey="false" name="Geometry" sortField="NO"
+            type="GEOM" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="The text of this field will be shown on the map beside the point."
+            from="to_name" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Label"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="&quot;red&quot;" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="Colour" sortField="NO" type="COLOUR" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="&lt;html>Name of the symbol used when drawing a point.&lt;br>If this is null a circle is used. &lt;br>Available symbols are &quot;triangle&quot;,&quot;inverted-triangle&quot;,&quot;diamond&quot;,&quot;square&quot;,&quot;pentagon&quot;,&quot;star&quot;,&quot;fat-star&quot;,&quot;hexagon&quot;,&quot;circle&quot;.&lt;/html>"
+            from="" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Symbol"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="Set to less than 1 if you want the object to be partially see-through, 0 for completely invisible."
+            formula="1.0" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Opaque"
+            sortField="NO" type="DOUBLE" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="ColourKey"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn description="The width in pixels of the point."
+            formula="10" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="PixelWidth"
+            sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="The font size for the name. A value of 0 takes the default size. Less than zero deactivates the label."
+            formula="12" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="FontSize"
+            sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="Set this to 1 to draw an outline around the point or 0 otherwise."
+            formula="1" isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="DrawOutline"
+            sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="Use this field to override the colour shown in the legend for the object."
+            isBatchKey="false" isGroupBy="false" isOptional="true"
+            isReportKey="false" name="LegendColour" sortField="NO"
+            type="COLOUR" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="This key field is used to populate the map's legend."
+            formula="" from="filter_key" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="LegendKey" sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn
+            description="This key field is used to select objects when you are drawing the map by calling the image formula."
+            isBatchKey="false" isGroupBy="false" isOptional="true"
+            isReportKey="false" name="ImageFormulaKey" sortField="NO"
+            type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="LabelGroupKey"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false"
+            name="NonOverlappingPolygonLayerGroupKey" sortField="NO"
+            type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="Tooltip"
+            sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="1" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="Selectable" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false"
+            name="LabelPositioningOption" sortField="NO" type="STRING" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn isBatchKey="false" isGroupBy="false"
+            isOptional="true" isReportKey="false" name="LabelColour"
+            sortField="NO" type="COLOUR" useFormula="false">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="0" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="LabelPriority" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="0" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="Flags" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="0" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="MinZoom" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <AdaptedColumn formula="1000" isBatchKey="false"
+            isGroupBy="false" isOptional="true" isReportKey="false"
+            name="MaxZoom" sortField="NO" type="LONG" useFormula="true">
+            <flags>1</flags>
+          </AdaptedColumn>
+          <FilterFormula/>
+          <UserFormulae userCanEdit="true">timeratio1dp() = 0.1 * round(10*timeRatio)</UserFormulae>
+        </AdaptedTable>
+      </Adapter>
+      <Instruction
+        component="com.opendoorlogistics.studio.uicomponents.map"
+        datastore="Mapinput" executionMode="-1" userCanEdit="true" uuid="4b4f42b2-56c6-4a18-adac-9e976c278db5">
+        <reportTopLabelFormula>rngTitle()</reportTopLabelFormula>
+        <Config>
+          <MapConfig>
+            <useCustomTooltips>false</useCustomTooltips>
+          </MapConfig>
+        </Config>
+        <Config>
+          <MapConfig>
+            <useCustomTooltips>false</useCustomTooltips>
+          </MapConfig>
+        </Config>
+      </Instruction>
+    </Option>
+    <Option Name="Show table" OptionId="Show table"
+      launchMultiple="true" overrideVisibleParameters="false"
+      refreshButtonAlwaysEnabled="true" showLastRefreshedTime="true"
+      synchronised="false" userCanEdit="true">
+      <Instruction
+        component="com.opendoorlogistics.studio.uicomponents.showtable"
+        datastore="ExampleJourneysReport" executionMode="-1"
+        outputDatastore="Output of Show table" userCanEdit="true" uuid="caa2ae96-8a13-4a5a-a572-e56534c34be6">
+        <reportTopLabelFormula>rngTitle() </reportTopLabelFormula>
+        <Config>
+          <queryTableConfig showTableControl="true" useCopyOfTable="true"/>
+        </Config>
+        <Config>
+          <queryTableConfig showTableControl="true" useCopyOfTable="true"/>
+        </Config>
+      </Instruction>
+    </Option>
+    <Option Name="Export table" OptionId="Show table1"
+      launchMultiple="false" overrideVisibleParameters="false"
+      refreshButtonAlwaysEnabled="false" showLastRefreshedTime="false"
+      synchronised="false" userCanEdit="true">
+      <Output datastore="ExampleJourneysReport"
+        destinationTable="ExampleJourneysReport"
+        inputTable="ExampleJourneys" type="APPEND_TO_EXISTING_TABLE" userCanEdit="true"/>
+    </Option>
+  </Option>
+  <CreatedByComponent>com.opendoorlogistics.studio.uicomponents.map</CreatedByComponent>
+  <UserFormulae userCanEdit="true">brickgeom(bid) = lookup(bid, "Shapefile,Shapefile",c("brick_id"),c("geom"))
+</UserFormulae>
+  <UserFormulae userCanEdit="true">rngTitle() = "&lt;html&gt;&lt;b&gt;Example journeys using network graph " &amp; sp(c("GRAPH_DIR")) &amp; "&lt;/b&gt;&lt;/html&gt;"</UserFormulae>
+  <ScriptFormatVersion major="1" minor="0" revision="0"/>
+</Script>
