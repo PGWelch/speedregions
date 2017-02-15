@@ -328,4 +328,31 @@ public class GeomUtils {
 		LinkedList<Polygon> polygons = getPolygons(geometry);
 		return factory.createMultiPolygon(polygons.toArray(new Polygon[polygons.size()]));
 	}
+	
+	/**
+	 * Clean a polygon by traking a buffer of it 
+	 * @param p
+	 * @param factory
+	 * @return
+	 */
+	public static com.vividsolutions.jts.geom.MultiPolygon cleanPolygon(Polygon p, GeometryFactory factory){
+		// take buffer of outer
+		Geometry outerBuffer = p.buffer(0);
+		
+		// remove buffer of inner
+		int nr = p.getNumInteriorRing();
+		for(int i =0 ; i< nr ;i++){
+			Geometry ring = p.getInteriorRingN(i);
+			Geometry innerBuffer = ring.buffer(0);
+			outerBuffer = outerBuffer.difference(innerBuffer);
+		}
+		
+		return toJTSMultiPolygon(outerBuffer, factory);
+	}
+	
+//	public static void main(String []args){
+//		Geometry geometry = toJTS("MULTIPOLYGON ( ((20 35, 10 30, 10 10, 30 5, 45 20, 20 35), (30 20, 20 15, 20 25, 30 20)))");
+//		System.out.println(toWKT(cleanPolygon((Polygon)geometry.getGeometryN(0),newGeomFactory() )));
+//		
+//	}
 }

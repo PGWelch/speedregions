@@ -15,6 +15,7 @@ public class AppSettings {
 	private boolean foot=false;
 	private double gridCellMetres=100;
 	private boolean reportInMiles = false;
+	private boolean mergeRegionsBeforeBuild = false;
 	
 	public String getOutdirectory() {
 		return outdirectory;
@@ -130,6 +131,12 @@ public class AppSettings {
 	}
 	public void setReportInMiles(boolean reportInMiles) {
 		this.reportInMiles = reportInMiles;
+	}
+	public boolean isMergeRegionsBeforeBuild() {
+		return mergeRegionsBeforeBuild;
+	}
+	public void setMergeRegionsBeforeBuild(boolean mergeRegionsBeforeBuild) {
+		this.mergeRegionsBeforeBuild = mergeRegionsBeforeBuild;
 	}
 	
 	

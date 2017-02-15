@@ -50,9 +50,9 @@ class SpeedRegionsFlagEncodersFactory {
 
 	AbstractFlagEncoder createEncoder(String type, PMap config, final SpeedRegionLookup lookup, ProcessedWayListener cb) {
 		if (TextUtils.equalsStd(type, EncodingManager.CAR)) {
-			return createCar(new PMap(), lookup, cb);
+			return createCar(config, lookup, cb);
 		} else if (TextUtils.equalsStd(type, EncodingManager.MOTORCYCLE)) {
-			return createMotorcycle(new PMap(), lookup, cb);
+			return createMotorcycle(config, lookup, cb);
 		} else if (TextUtils.equalsStd(type, EncodingManager.BIKE)) {
 			return new BikeFlagEncoder();
 		} else if (TextUtils.equalsStd(type, EncodingManager.FOOT)) {

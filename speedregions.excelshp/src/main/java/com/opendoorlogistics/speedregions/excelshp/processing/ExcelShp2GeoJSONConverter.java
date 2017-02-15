@@ -297,10 +297,10 @@ public class ExcelShp2GeoJSONConverter {
 			if(rule==null){
 				throw new RuntimeException("Brick " + brickItem.brickId +  " has " + BRFLD_SPEED_PROFILE_ID + " \"" + spid + "\" but no speed profile was found with this id in table "+ speedProfilesTableName + ".");
 			}
-				
-			// add brick id to the rule
+
+			// always add brick id even if merging regions before the build as we use it in the summary report
 			rule.getOriginalRule().getMatchRule().getRegionTypes().add(brickItem.brickId);
-			rule.getParentCollapsedRule().getMatchRule().getRegionTypes().add(brickItem.brickId);
+			rule.getParentCollapsedRule().getMatchRule().getRegionTypes().add(brickItem.brickId);				
 
 		}
 		
@@ -370,11 +370,16 @@ public class ExcelShp2GeoJSONConverter {
 		LOGGER.info("Finished reading shapefile");
 
 		for(VehicleType type:VehicleType.values()){
-			if(!settings.isEnabled(type) || !type.isSpeedRegionsSupported()){
+			if(!settings.isEnabled(type)){
 				continue;
 			}
 			
-			LOGGER.info("Check rules for vehicle type " + type.getGraphhopperName());
+			if(!type.isSpeedRegionsSupported()){
+				LOGGER.info("Skipping build of rules for vehicle type " + type.getGraphhopperName() + " as not supported");				
+				continue;
+			}else{
+				LOGGER.info("Building rules for vehicle type " + type.getGraphhopperName());				
+			}
 			
 			String tablename = IOStringConstants.SPEED_PROFILES_TABLENAME +TextUtils.capitaliseFirstLetter(type.getGraphhopperName());
 			

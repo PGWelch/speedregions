@@ -2,31 +2,15 @@ package com.opendoorlogistics.speedregions.graphhopper;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.logging.Logger;
 
 import com.graphhopper.GraphHopper;
-import com.graphhopper.reader.OSMWay;
 import com.graphhopper.routing.util.AbstractFlagEncoder;
-import com.graphhopper.routing.util.CarFlagEncoder;
 import com.graphhopper.routing.util.EncodingManager;
-import com.graphhopper.routing.util.MotorcycleFlagEncoder;
 import com.graphhopper.util.CmdArgs;
-import com.graphhopper.util.EdgeIteratorState;
 import com.graphhopper.util.PMap;
-import com.graphhopper.util.PointList;
-import com.graphhopper.util.shapes.GHPoint;
-import com.opendoorlogistics.speedregions.SpeedRegionConsts;
 import com.opendoorlogistics.speedregions.SpeedRegionLookup;
-import com.opendoorlogistics.speedregions.SpeedRegionLookup.SpeedRuleLookup;
 import com.opendoorlogistics.speedregions.SpeedRegionLookupBuilder;
-import com.opendoorlogistics.speedregions.beans.SpeedRule;
-import com.opendoorlogistics.speedregions.excelshp.app.AppInjectedDependencies.ProcessedWayListener;
-import com.opendoorlogistics.speedregions.utils.GeomUtils;
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.Point;
 
 /**
  * A temporary hack to use speed regions with graphhopper 0.5.
@@ -45,7 +29,7 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 	public static void main(String[] strArgs) throws Exception {
 		CmdArgs args = CmdArgs.read(strArgs);
 		if (args.getBool("odlwizardapp", false)) {
-			new RunWizardApp().runWizardAppForCar(args);
+			new RunWizardApp().runWizardApp(args);
 		} else {
 			runCommandLine(args);
 		}

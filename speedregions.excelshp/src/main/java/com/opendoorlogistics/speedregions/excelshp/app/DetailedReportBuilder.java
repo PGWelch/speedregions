@@ -42,13 +42,15 @@ public class DetailedReportBuilder  {
 	private static final Logger LOGGER = Logger.getLogger(DetailedReportBuilder.class.getName());
 	private final SpeedUnit unit;
 	private final TreeMap<String, Double> defaultSpeedsByHighwayType ;
+	private final boolean useBrickId;
 	private TreeMap<String, TreeMap<String, Stats>> statsByBrick = new TreeMap<>();
 	private TreeMap<String, TreeMap<String, Stats>> statsByRule = new TreeMap<>();
 
 	
-	public DetailedReportBuilder(SpeedUnit unit, TreeMap<String, Double> defaultSpeedsByHighwayType) {
+	public DetailedReportBuilder(SpeedUnit unit, TreeMap<String, Double> defaultSpeedsByHighwayType, boolean useBrickId) {
 		this.unit = unit;
 		this.defaultSpeedsByHighwayType = defaultSpeedsByHighwayType;
+		this.useBrickId = useBrickId;
 	}
 
 	private static class WeightedDoubleMeanCalculator{
@@ -176,7 +178,9 @@ public class DetailedReportBuilder  {
 		stats.addEdge(lengthMetres, originalSpeedKPH, speedRegionsSpeedKPH);
 
 		// Add to brick stats
-		addStatsToMap(brickId, highwayType, stats, statsByBrick);
+		if(useBrickId){
+			addStatsToMap(brickId, highwayType, stats, statsByBrick);			
+		}
 
 		// And region stats
 		addStatsToMap(ruleId, highwayType, stats, statsByRule);
@@ -202,7 +206,9 @@ public class DetailedReportBuilder  {
 
 	public List<RawStringTable> buildReports(RawStringTable [] getDefault) {
 		ArrayList<RawStringTable> ret = new ArrayList<>();
-		ret.addAll(buildStatsTable("StatsByBrick", "BrickId", this.statsByBrick,null));
+		if(useBrickId){
+			ret.addAll(buildStatsTable("StatsByBrick", "BrickId", this.statsByBrick,null));			
+		}
 		ret.addAll(buildStatsTable("StatsByRule", "RuleId", this.statsByRule,getDefault));
 		// RegionId, BrickId,
 		return ret;

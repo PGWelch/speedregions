@@ -35,7 +35,7 @@ import com.opendoorlogistics.speedregions.utils.TextUtils;
 
 public class SettingsPanel extends JPanel{
 	private static final String PREFKEY = "excelshp_settings";
-	private static final Preferences userPreferences = Preferences.userNodeForPackage(SettingsPanel.class);
+	private static final Preferences USER_PREFERENCES = Preferences.userNodeForPackage(SettingsPanel.class);
 	
 	private final FileBrowserPanel pbf;
 	private final FileBrowserPanel outdir;
@@ -48,10 +48,11 @@ public class SettingsPanel extends JPanel{
 	private final JLabel gridSizeLabel;
 	private final JTextField gridSize;
 	private final JCheckBox miles;
+	private final JCheckBox mergeRegionsBeforeBuild;
 	private AppSettings settings;
 
 	private static AppSettings load(){
-		String s = userPreferences.get(PREFKEY,TextUtils.toJSON(new AppSettings()));
+		String s = USER_PREFERENCES.get(PREFKEY,TextUtils.toJSON(new AppSettings()));
 		try {
 			return TextUtils.fromJSON(s, AppSettings.class);
 		} catch (Exception e) {
@@ -61,7 +62,7 @@ public class SettingsPanel extends JPanel{
 	}
 
 	private static void save(AppSettings s){
-		userPreferences.put(PREFKEY, TextUtils.toJSON(s));
+		USER_PREFERENCES.put(PREFKEY, TextUtils.toJSON(s));
 	}
 	
 	public SettingsPanel() {
@@ -135,6 +136,11 @@ public class SettingsPanel extends JPanel{
 		gridSizePanel.add(gridSizeLabel);
 		gridSizePanel.add(gridSize);
 		add(gridSizePanel);
+		
+		addSep();
+		mergeRegionsBeforeBuild = new JCheckBox("Merge regions before building graph (quicker, but no reports by brick)", settings.isMergeRegionsBeforeBuild());
+		mergeRegionsBeforeBuild.addActionListener(actionListener);
+		add(mergeRegionsBeforeBuild);
 		
 		for(Component component : getComponents()){
 			if(component instanceof JComponent){
@@ -225,14 +231,10 @@ public class SettingsPanel extends JPanel{
 	}
 	
 	private void update(){
-		excel.setEnabled(settings.isUseExcelShape());
-		shp.setEnabled(settings.isUseExcelShape());
-		idFieldLabel.setEnabled(settings.isUseExcelShape());
-		idField.setEnabled(settings.isUseExcelShape());
-		gridSizeLabel.setEnabled(settings.isUseExcelShape());
-		gridSize.setEnabled(settings.isUseExcelShape());
-		// refill combo
-	//	idField.se
+		for(Component component : new Component[]{excel,shp,idFieldLabel,idField,gridSizeLabel,gridSize,mergeRegionsBeforeBuild}){
+			component.setEnabled(settings.isUseExcelShape());
+		}
+
 	}
 	
 	private void addSep(){
@@ -247,6 +249,7 @@ public class SettingsPanel extends JPanel{
 		settings.setShapefile(shp.getFilename());
 		settings.setIdFieldNameInShapefile(idField.getEditor().getItem().toString());
 		settings.setReportInMiles(miles.isSelected());
+		settings.setMergeRegionsBeforeBuild(mergeRegionsBeforeBuild.isSelected());
 		
 		for(VehicleType type:VehicleType.values()){
 			settings.setEnabled(type,vehicleTypes[type.ordinal()].isSelected());
@@ -272,6 +275,7 @@ public class SettingsPanel extends JPanel{
 		idField.setSelectedItem(settings.getIdFieldNameInShapefile());
 		gridSize.setText(Double.toString(settings.getGridCellMetres()));
 		miles.setSelected(settings.isReportInMiles());
+		mergeRegionsBeforeBuild.setSelected(settings.isMergeRegionsBeforeBuild());
 		
 		for(VehicleType type:VehicleType.values()){
 			vehicleTypes[type.ordinal()].setSelected(settings.isEnabled(type));

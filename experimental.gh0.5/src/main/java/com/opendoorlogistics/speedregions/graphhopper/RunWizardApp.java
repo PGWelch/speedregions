@@ -39,12 +39,14 @@ public class RunWizardApp {
 	 * @param args
 	 * @throws Exception
 	 */
-	void runWizardAppForCar(CmdArgs args) throws Exception {
+	void runWizardApp(CmdArgs args) throws Exception {
+		
+
 		
 		// use config file from the run directory... (car only)
-		File file = new File("config.properties");
+		File file = new File("speedregions.graphhopper.properties");
 		if (!file.exists()) {
-			SwingUtils.showMessageOnEDT(null, "Cannot find config.properties file");
+			SwingUtils.showMessageOnEDT(null, "Cannot find speedregions.graphhopper.properties file");
 			return;
 		}
 
@@ -53,6 +55,7 @@ public class RunWizardApp {
 		final CmdArgs mergedArgs = CmdArgs.readFromConfigAndMerge(args, "config", "graphhopper.config");
 
 		AppInjectedDependencies dependencies = createAppDependencies(mergedArgs);
+
 		
 		dependencies.HACK_ReinitLogging();
 		
@@ -114,13 +117,21 @@ public class RunWizardApp {
 		final GraphHopper graphHopper =new GraphHopper();
 		graphHopper.forDesktop().init(mergedArgs).setGraphHopperLocation(settings.getOutdirectory());
 
-		ArrayList<AbstractFlagEncoder> newSpeedEncoders = new ArrayList<>();
-		int bytesForFlags = mergedArgs.getInt("graph.bytesForFlags", 4);
-		SpeedRegionsFlagEncodersFactory factory = new SpeedRegionsFlagEncodersFactory(bytesForFlags);
+		// Get enabled vehicles
+		ArrayList<VehicleType> vehicleTypes = new ArrayList<>();
 		for(VehicleType type : VehicleType.values()){
 			if(settings.isEnabled(type)){
-				newSpeedEncoders.add(factory.createEncoder(type.getGraphhopperName(),new PMap(), speedRegionLookup, handledWayCB));
+				vehicleTypes.add(type);
 			}
+		}
+
+		// We need more bytes for flags if we have more vehicle types...
+		int bytesForFlags = mergedArgs.getInt("graph.bytesForFlags", vehicleTypes.size()<=2 ? 4 : 8);
+
+		ArrayList<AbstractFlagEncoder> newSpeedEncoders = new ArrayList<>();
+		SpeedRegionsFlagEncodersFactory factory = new SpeedRegionsFlagEncodersFactory(bytesForFlags);
+		for(VehicleType type : vehicleTypes){
+			newSpeedEncoders.add(factory.createEncoder(type.getGraphhopperName(),new PMap(), speedRegionLookup, handledWayCB));
 		}
 	
 		// Don't forget to call this otherwise the dummy encoders used to get original
