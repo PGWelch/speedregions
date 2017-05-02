@@ -36,6 +36,7 @@ import com.opendoorlogistics.speedregions.beans.files.UncompiledSpeedRulesFile;
 import com.opendoorlogistics.speedregions.excelshp.app.AppInjectedDependencies;
 import com.opendoorlogistics.speedregions.excelshp.app.AppSettings;
 import com.opendoorlogistics.speedregions.excelshp.app.VehicleType;
+import com.opendoorlogistics.speedregions.excelshp.app.VehicleTypeTimeProfile;
 import com.opendoorlogistics.speedregions.excelshp.io.ExcelReader;
 import com.opendoorlogistics.speedregions.excelshp.io.IOStringConstants;
 import com.opendoorlogistics.speedregions.excelshp.io.RawStringTable;
@@ -70,12 +71,11 @@ public class ExcelShp2GeoJSONConverter {
 		return ret;
 	}
 	
-	private TreeMap<String,SpeedRule>  readSpeedRulesTable(String tablename,List<RawStringTable> tables){
-		LOGGER.info("Reading " + tablename +" table");
+	private TreeMap<String,SpeedRule>  readSpeedRulesTable(RawStringTable table){
+		LOGGER.info("Reading " + table.getName() +" table");
 		
 		TreeMap<String,SpeedRule> ret = new TreeMap<>();
-		RawStringTable table = findTable(tables, tablename);
-		
+	
 		// get field indices (checking fields exist)
 		int iId = findField(SPFLD_ID, table);
 		int iPId = findField(SPFLD_PARENT_ID, table);
@@ -93,7 +93,7 @@ public class ExcelShp2GeoJSONConverter {
 			// rows are always filled to the header length so don't need to check length
 			rule.setId(TextUtils.stdString(row.get(iId)));
 			
-			String prefix="Row " + line + " in table " + tablename + " with id \"" + rule.getId()+"\" ";
+			String prefix="Row " + line + " in table " + table.getName() + " with id \"" + rule.getId()+"\" ";
 		
 			// parse id
 			if(rule.getId().length()==0){
@@ -173,7 +173,7 @@ public class ExcelShp2GeoJSONConverter {
 			line++;
 		}
 
-		LOGGER.info("Finished reading " + tablename +" table");		
+		LOGGER.info("Finished reading " + table.getName() +" table");		
 		return ret;
 	}
 
@@ -279,11 +279,11 @@ public class ExcelShp2GeoJSONConverter {
 	 * Add the brick ids to the rules
 	 * @param tables
 	 * @param shp
-	 * @param rules
+	 * @param rulesBySpeedProfileId
 	 */
 	private void applyBricksTableToRules(List<BrickItem> bricks,
 			String speedProfilesTableName,
-			Map<String, RuleConversionInfo> rules){
+			Map<String, RuleConversionInfo> rulesBySpeedProfileId){
 		LOGGER.info("Reading bricks table");
 
 		for(BrickItem brickItem : bricks){
@@ -293,7 +293,7 @@ public class ExcelShp2GeoJSONConverter {
 			if(spid.length()==0){
 				continue;
 			}
-			RuleConversionInfo rule = rules.get(spid);
+			RuleConversionInfo rule = rulesBySpeedProfileId.get(spid);
 			if(rule==null){
 				throw new RuntimeException("Brick " + brickItem.brickId +  " has " + BRFLD_SPEED_PROFILE_ID + " \"" + spid + "\" but no speed profile was found with this id in table "+ speedProfilesTableName + ".");
 			}
@@ -348,7 +348,7 @@ public class ExcelShp2GeoJSONConverter {
 	}
 	
 	public static class ConversionResult{
-		public TreeMap<VehicleType,TreeMap<String,RuleConversionInfo>> rules = new TreeMap<>();
+		public TreeMap<VehicleTypeTimeProfile,TreeMap<String,RuleConversionInfo>> rules = new TreeMap<>();
 		public TreeMap<String, Geometry> shp;
 		public List<BrickItem> bricks;
 	}
@@ -369,59 +369,98 @@ public class ExcelShp2GeoJSONConverter {
 		dependencies.HACK_ReinitLogging();
 		LOGGER.info("Finished reading shapefile");
 
-		for(VehicleType type:VehicleType.values()){
-			if(!settings.isEnabled(type)){
-				continue;
-			}
-			
-			if(!type.isSpeedRegionsSupported()){
-				LOGGER.info("Skipping build of rules for vehicle type " + type.getGraphhopperName() + " as not supported");				
-				continue;
-			}else{
-				LOGGER.info("Building rules for vehicle type " + type.getGraphhopperName());				
-			}
-			
-			String tablename = IOStringConstants.SPEED_PROFILES_TABLENAME +TextUtils.capitaliseFirstLetter(type.getGraphhopperName());
-			
-			// Read speed profiles table
-			TreeMap<String, SpeedRule> originalRules = readSpeedRulesTable(tablename,tables);
+		for(RawStringTable table: tables){
+			VehicleTypeTimeProfile vttp = VehicleTypeTimeProfile.parseTableName(table.getName());
+			if(vttp!=null && settings.isEnabled(vttp.getVehicleType())){
+				if(!vttp.getVehicleType().isSpeedRegionsSupported()){
+					LOGGER.info("Skipping build of rules for table " + table.getName()+ " as not supported for type " + vttp.getVehicleType().getGraphhopperName());				
+					continue;
+				}else{
+					LOGGER.info("Building rules for table " + table.getName());				
+				}
+				
 
-			// And a match rule for the vehicle type
-			for(SpeedRule sr:originalRules.values()){
-				sr.getMatchRule().getFlagEncoders().add(type.getGraphhopperName());
-			}
+				// Read speed profiles table
+				TreeMap<String, SpeedRule> originalRules = readSpeedRulesTable(table);
 
-			// Collapse the parent relations in the speed rules and save in a map by id
-			TreeMap<String,RuleConversionInfo> details = new TreeMap<>();
-			for(Map.Entry<SpeedRule,SpeedRule> entry : new SpeedRulesProcesser().collapseParentRelations(originalRules.values()).entrySet()){
-				RuleConversionInfo info = new RuleConversionInfo();
-				info.setOriginalRule(entry.getKey());
-				info.setParentCollapsedRule(entry.getValue());
-				details.put(entry.getKey().getId(), info);
-			}
+				// And a match rule for the vehicle type
+				for(SpeedRule sr:originalRules.values()){
+					sr.getMatchRule().getFlagEncoders().add(vttp.getCombinedId());
+				}
 
-			// Read bricks and merge geometries etc
-			applyBricksTableToRules(ret.bricks,tablename, details);
+				// Collapse the parent relations in the speed rules and save in a map by id
+				TreeMap<String,RuleConversionInfo> details = new TreeMap<>();
+				for(Map.Entry<SpeedRule,SpeedRule> entry : new SpeedRulesProcesser().collapseParentRelations(originalRules.values()).entrySet()){
+					RuleConversionInfo info = new RuleConversionInfo();
+					info.setOriginalRule(entry.getKey());
+					info.setParentCollapsedRule(entry.getValue());
+					details.put(entry.getKey().getId(), info);
+				}
 
-			if(dependencies.isDefaultSpeedsKnown(type.getGraphhopperName())){
-				calculatePercentageSpeedChanges(type,details);				
+				// Read bricks and merge geometries etc
+				applyBricksTableToRules(ret.bricks,table.getName(), details);
+
+				if(dependencies.isDefaultSpeedsKnown(vttp)){
+					calculatePercentageSpeedChanges(vttp,details);				
+				}
+				
+				ret.rules.put(vttp, details);	
 			}
-			
-			ret.rules.put(type, details);
-						
 		}
+		
+//		for(VehicleType type:VehicleType.values()){
+//			if(!settings.isEnabled(type)){
+//				continue;
+//			}
+//			
+//			if(!type.isSpeedRegionsSupported()){
+//				LOGGER.info("Skipping build of rules for vehicle type " + type.getGraphhopperName() + " as not supported");				
+//				continue;
+//			}else{
+//				LOGGER.info("Building rules for vehicle type " + type.getGraphhopperName());				
+//			}
+//			
+//			String tablename = IOStringConstants.SPEED_PROFILES_TABLENAME +TextUtils.capitaliseFirstLetter(type.getGraphhopperName());
+//			
+//			// Read speed profiles table
+//			TreeMap<String, SpeedRule> originalRules = readSpeedRulesTable(tablename,tables);
+//
+//			// And a match rule for the vehicle type
+//			for(SpeedRule sr:originalRules.values()){
+//				sr.getMatchRule().getFlagEncoders().add(type.getGraphhopperName());
+//			}
+//
+//			// Collapse the parent relations in the speed rules and save in a map by id
+//			TreeMap<String,RuleConversionInfo> details = new TreeMap<>();
+//			for(Map.Entry<SpeedRule,SpeedRule> entry : new SpeedRulesProcesser().collapseParentRelations(originalRules.values()).entrySet()){
+//				RuleConversionInfo info = new RuleConversionInfo();
+//				info.setOriginalRule(entry.getKey());
+//				info.setParentCollapsedRule(entry.getValue());
+//				details.put(entry.getKey().getId(), info);
+//			}
+//
+//			// Read bricks and merge geometries etc
+//			applyBricksTableToRules(ret.bricks,tablename, details);
+//
+//			if(dependencies.isDefaultSpeedsKnown(type.getGraphhopperName())){
+//				calculatePercentageSpeedChanges(type,details);				
+//			}
+//			
+//			ret.rules.put(type, details);
+//						
+//		}
 
 		LOGGER.info("Finished processing shapefile+Excel");
 
 		return ret;
 	}
 
-	private void calculatePercentageSpeedChanges(VehicleType type,TreeMap<String, RuleConversionInfo> details) {
+	private void calculatePercentageSpeedChanges(VehicleTypeTimeProfile type,TreeMap<String, RuleConversionInfo> details) {
 		
 		// For the rules, get their percentage speed change by road type
 		for(RuleConversionInfo rule : details.values()){
 			for(String highwayType : IOStringConstants.ROAD_TYPES){
-				double defaultSpeed = dependencies.speedKmPerHour(type.getGraphhopperName(), highwayType);
+				double defaultSpeed = dependencies.speedKmPerHour(type, highwayType);
 				if(defaultSpeed==0){
 					// edge case where road type is disabled anyway by default and we can't 
 					// report a percentage. Just ignore as probably irrelevant

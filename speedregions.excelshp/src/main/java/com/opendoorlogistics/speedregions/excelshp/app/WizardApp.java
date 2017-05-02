@@ -230,7 +230,7 @@ public class WizardApp {
 
 
 		// init detailed report builder
-		final TreeMap<String, DetailedReportBuilder> detailedReportBuilders = new TreeMap<>();
+		final TreeMap<VehicleTypeTimeProfile, DetailedReportBuilder> detailedReportBuilders = new TreeMap<>();
 		// DetailedReportBuilder detailedReportBuilder = new DetailedReportBuilder();
 
 		// now compile graph
@@ -248,7 +248,7 @@ public class WizardApp {
 			}, new ProcessedWayListener() {
 
 				@Override
-				public void onProcessedWay(String vehicleType, LineString lineString, String regionId, String highwayType,
+				public void onProcessedWay(VehicleTypeTimeProfile  vehicleType, LineString lineString, String regionId, String highwayType,
 						double lengthMetres, SpeedRule rule, double originalSpeedKPH, double speedRegionsSpeedKPH) {
 
 					
@@ -265,7 +265,7 @@ public class WizardApp {
 			// Build reports and output to text and Excel file
 			final ArrayList<RawStringTable> allReports = new ArrayList<>();
 			final RawStringTable[] defaultReport = new RawStringTable[1];
-			for (Map.Entry<String, DetailedReportBuilder> reportBuilder : detailedReportBuilders.entrySet()) {
+			for (Map.Entry<VehicleTypeTimeProfile, DetailedReportBuilder> reportBuilder : detailedReportBuilders.entrySet()) {
 				List<RawStringTable> reports = reportBuilder.getValue().buildReports(defaultReport);
 
 				// export to excel
@@ -279,8 +279,8 @@ public class WizardApp {
 				for (RawStringTable report : reports) {
 
 					// set fully qualified name and description including vehickle type
-					String vehicleType = reportBuilder.getKey();
-					String name = report.getName() + "." + vehicleType;
+					VehicleTypeTimeProfile vehicleType = reportBuilder.getKey();
+					String name = report.getName() + "." + vehicleType.getCombinedId();
 					report.setName(name);
 					if (report.getDescription() != null) {
 						report.setDescription(vehicleType + " - " + report.getDescription());
@@ -317,14 +317,14 @@ public class WizardApp {
 	private UncompiledSpeedRulesFile createUncompiledUsingBrickIdLookup(ConversionResult result) {
 		UncompiledSpeedRulesFile uncompiled= new UncompiledSpeedRulesFile();
 		int nVehicleTypes = result.rules.size();
-		for (Map.Entry<VehicleType, TreeMap<String, RuleConversionInfo>> vehicleType : result.rules.entrySet()) {
+		for (Map.Entry<VehicleTypeTimeProfile, TreeMap<String, RuleConversionInfo>> vehicleType : result.rules.entrySet()) {
 
 			// rules will already be marked as belonging to the correct encoder
 			for (RuleConversionInfo rci : vehicleType.getValue().values()) {
 				SpeedRule rule = rci.getParentCollapsedRule();
 				if (nVehicleTypes > 1) {
 					// prefix the vehicle type to the rule id if have more than one vehicle type
-					rule.setId(vehicleType.getKey().getGraphhopperName() + "-" + rule.getId());
+					rule.setId(vehicleType.getKey().getCombinedId() + "-" + rule.getId());
 				}
 				uncompiled.getRules().add(rule);
 			}
@@ -381,7 +381,7 @@ public class WizardApp {
 		}
 		
 		// finalise the rules
-		for (Map.Entry<VehicleType, TreeMap<String, RuleConversionInfo>> vehicleType : result.rules.entrySet()) {
+		for (Map.Entry<VehicleTypeTimeProfile, TreeMap<String, RuleConversionInfo>> vehicleType : result.rules.entrySet()) {
 
 			// rules will already be marked as belonging to the correct encoder
 			for (RuleConversionInfo rci : vehicleType.getValue().values()) {
@@ -389,7 +389,7 @@ public class WizardApp {
 
 				// prefix the vehicle type to the rule id to ensure global uniqueness
 				String originalId = rule.getId();
-				rule.setId(vehicleType.getKey().getGraphhopperName() + "-" + rule.getId());
+				rule.setId(vehicleType.getKey().getCombinedId()+ "-" + rule.getId());
 				
 				// as we've already merged by profile id / rule id, add a match rule for the original rule id
 				rule.getMatchRule().getRegionTypes().clear();

@@ -445,6 +445,44 @@
       </Config>
     </Instruction>
   </Option>
+  <Option Name="Coloured by multiplier" OptionId="Show map3"
+    launchMultiple="false" overrideVisibleParameters="false"
+    refreshButtonAlwaysEnabled="false" showLastRefreshedTime="false"
+    synchronised="true" userCanEdit="true">
+    <Adapter flags="0" id="ColouredByMultiplier" userCanEdit="true">
+      <adapterType>NORMAL</adapterType>
+      <AdaptedTable FetchSourceFields="true" IsLimitedResults="false"
+        Join="false" MaxNumberRows="1000" fromDatastore="BricksMap"
+        fromTable="drawables" isBatchKey="false" isGroupBy="false"
+        isOptional="false" isReportKey="false" joinDatastore=""
+        joinTable="" name="drawables">
+        <flags>1920</flags>
+        <AdaptedColumn formula="fillColour() " from="Colour"
+          isBatchKey="false" isGroupBy="false" isOptional="true"
+          isReportKey="false" name="Colour" sortField="NO" type="COLOUR" useFormula="true">
+          <flags>1</flags>
+        </AdaptedColumn>
+        <FilterFormula/>
+        <UserFormulae userCanEdit="true">multiplier() = lookup(speed_profile_id,"External,SpeedProfilesCar",c("id"),c("multiplier"))</UserFormulae>
+        <UserFormulae userCanEdit="true">fillColour() = if(multiplier()!=null,cold2hot(1-multiplier()),"grey")</UserFormulae>
+      </AdaptedTable>
+    </Adapter>
+    <Instruction
+      component="com.opendoorlogistics.studio.uicomponents.map"
+      datastore="ColouredByMultiplier" executionMode="-1"
+      userCanEdit="true" uuid="c2ad978d-5a5c-4a44-98a8-ce7dcfc947a5">
+      <Config>
+        <MapConfig>
+          <useCustomTooltips>false</useCustomTooltips>
+        </MapConfig>
+      </Config>
+      <Config>
+        <MapConfig>
+          <useCustomTooltips>false</useCustomTooltips>
+        </MapConfig>
+      </Config>
+    </Instruction>
+  </Option>
   <Option Name="Example journeys" OptionId="New option1"
     launchMultiple="false" overrideVisibleParameters="false"
     refreshButtonAlwaysEnabled="false" showLastRefreshedTime="false"
@@ -518,7 +556,7 @@
           <flags>0</flags>
         </AdaptedColumn>
         <AdaptedColumn
-          formula="if(timeratio()&lt;1,lerp(colour(0.1,0.8,0.1),colour(0.1,0.1,0.8),timeRatio()), lerp(colour(0.1,0.1,0.8),colour(0.8,0.1,0.1),timeRatio()-1))"
+          formula="if(timeratio()&lt;1,lerp(colour(0.9,0.1,0.1),colour(0.1,0.9,0.1),pow(timeRatio(),2)), lerp(colour(0.1,0.9,0.1),colour(0.1,0.1,0.9),pow(timeRatio(),2)-1)) "
           from="From column" isBatchKey="false" isGroupBy="false"
           isOptional="false" isReportKey="false" name="RatioColour"
           sortField="NO" type="COLOUR" useFormula="true">

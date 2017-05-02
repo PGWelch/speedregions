@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.geojson.FeatureCollection;
@@ -94,6 +95,11 @@ public class SpeedRegionLookupBuilder {
 			@Override
 			public RegionsSpatialTreeNode getTree() {
 				return compiled.getTree();
+			}
+
+			@Override
+			public Set<String> getEncoderTypes() {
+				return rulesMap.keySet();
 			}
 		};
 	}

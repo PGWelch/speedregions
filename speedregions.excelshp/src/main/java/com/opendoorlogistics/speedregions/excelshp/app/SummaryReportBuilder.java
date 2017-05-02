@@ -34,12 +34,11 @@ public class SummaryReportBuilder {
 	private final Random random = new Random(123);
 	private final double percentResolution = 2.5;
 	private final SpeedUnit unit;
-	
+
 	public SummaryReportBuilder(AppInjectedDependencies speedProvider, SpeedUnit unit) {
 		this.dependencies = speedProvider;
 		this.unit = unit;
 	}
-
 
 	// Collate by 10 percent bins
 	private static class CollationRec implements Comparable<CollationRec> {
@@ -56,7 +55,7 @@ public class SummaryReportBuilder {
 	}
 
 	public boolean showSummaryReport(final ConversionResult cresult) {
-		
+
 		return SwingUtils.runOnEDT(new Callable<Boolean>() {
 
 			@Override
@@ -65,6 +64,7 @@ public class SummaryReportBuilder {
 			}
 		});
 	}
+
 	/**
 	 * Show a summary report and return false if uses cancels
 	 * 
@@ -74,48 +74,50 @@ public class SummaryReportBuilder {
 	private boolean showSummaryReportOnEDT(ConversionResult conversionResult) {
 		JScrollPane textScrollPane = buildTextAreaReport(conversionResult);
 		JScrollPane tableScrollPane = buildTable(conversionResult);
-		
+
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		splitPane.setTopComponent(tableScrollPane);
 		splitPane.setBottomComponent(textScrollPane);
 		splitPane.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		
-		return SwingUtils.showModalDialogOnEDT(splitPane, "Summary report - review before building graph", "Build graph (takes several minutes)", "Cancel",null,false);
+
+		return SwingUtils.showModalDialogOnEDT(splitPane, "Summary report - review before building graph",
+				"Build graph (takes several minutes)", "Cancel", null, false);
 	}
-	
+
 	private JScrollPane buildTextAreaReport(ConversionResult conversionResult) {
 		StringBuilder builder = new StringBuilder();
-		final TreeMap<VehicleType, TreeMap<String, RuleConversionInfo>> detailsByVehicleType=conversionResult.rules;
+		final TreeMap<VehicleTypeTimeProfile, TreeMap<String, RuleConversionInfo>> detailsByVehicleType = conversionResult.rules;
 
-		for (Map.Entry<VehicleType, TreeMap<String, RuleConversionInfo>> entry : detailsByVehicleType.entrySet()) {
-			if (!dependencies.isDefaultSpeedsKnown(entry.getKey().getGraphhopperName())) {
+		for (Map.Entry<VehicleTypeTimeProfile, TreeMap<String, RuleConversionInfo>> entry : detailsByVehicleType
+				.entrySet()) {
+			if (!dependencies.isDefaultSpeedsKnown(entry.getKey())) {
 				// Skip if default speeds are unknown
 				continue;
 			}
 
-			builder.append("For vehicle type " + entry.getKey().getGraphhopperName() + ", speeds for one or more types of road are:"
-					+ System.lineSeparator() + System.lineSeparator());
+			builder.append("For vehicle type " + entry.getKey().getCombinedId()
+					+ ", speeds for one or more types of road are:" + System.lineSeparator() + System.lineSeparator());
 
 			TreeMap<CollationRec, CollationRec> recs = new TreeMap<>();
 			for (RuleConversionInfo info : entry.getValue().values()) {
 				collateForRule(info, recs);
 			}
-			addCollatedToStringBuilder("...", recs,builder);
-			
+			addCollatedToStringBuilder("...", recs, builder);
+
 			builder.append(System.lineSeparator());
 		}
 
 		// collate bricks by rule key
 		TreeMap<String, TreeSet<String>> collated = new TreeMap<>();
-		for(BrickItem brickItem : conversionResult.bricks){
-			 TreeSet<String> set = collated.get(TextUtils.stdString(brickItem.speedProfileId));
-			 if(set==null){
-				 set = new TreeSet<>();
-				 collated.put(TextUtils.stdString(brickItem.speedProfileId), set);
-			 }
-			 set.add(brickItem.brickId);
+		for (BrickItem brickItem : conversionResult.bricks) {
+			TreeSet<String> set = collated.get(TextUtils.stdString(brickItem.speedProfileId));
+			if (set == null) {
+				set = new TreeSet<>();
+				collated.put(TextUtils.stdString(brickItem.speedProfileId), set);
+			}
+			set.add(brickItem.brickId);
 		}
-		
+
 		// sort by smallest first
 		ArrayList<Map.Entry<String, TreeSet<String>>> sorted = new ArrayList<>(collated.entrySet());
 		Collections.sort(sorted, new Comparator<Map.Entry<String, TreeSet<String>>>() {
@@ -125,38 +127,40 @@ public class SummaryReportBuilder {
 				return Integer.compare(o1.getValue().size(), o2.getValue().size());
 			}
 		});
-		
-		for(Map.Entry<String, TreeSet<String>> entry : sorted){
+
+		for (Map.Entry<String, TreeSet<String>> entry : sorted) {
 			builder.append(System.lineSeparator());
 			builder.append("Rule " + entry.getKey() + " has bricks ");
-			for(String s : entry.getValue()){
+			for (String s : entry.getValue()) {
 				builder.append(s);
 				builder.append(", ");
 			}
 			builder.append(System.lineSeparator());
 		}
-		
+
 		JTextArea textArea = new JTextArea(builder.toString());
 		textArea.setEditable(false);
 		textArea.setLineWrap(true);
 		JScrollPane scrollPane = new JScrollPane(textArea);
 		scrollPane.setPreferredSize(new Dimension(700, 200));
 		scrollPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5),
-				BorderFactory.createTitledBorder("Detailed report")));		
+				BorderFactory.createTitledBorder("Detailed report")));
 		return scrollPane;
 	}
-	private JScrollPane buildTable(ConversionResult conversionResult) {
-		final TreeMap<VehicleType, TreeMap<String, RuleConversionInfo>> detailsByVehicleType=conversionResult.rules;
 
-		class TableRow{
-			VehicleType vehicle;
+	private JScrollPane buildTable(ConversionResult conversionResult) {
+		final TreeMap<VehicleTypeTimeProfile, TreeMap<String, RuleConversionInfo>> detailsByVehicleType = conversionResult.rules;
+
+		class TableRow {
+			VehicleTypeTimeProfile vehicle;
 			RuleConversionInfo rule;
 			String meanPCChange;
-			int nbBricks(){
+
+			int nbBricks() {
 				return rule.getParentCollapsedRule().getMatchRule().getRegionTypes().size();
 			}
 		}
-		
+
 		// init table
 		RawStringTable rsTable = new RawStringTable("Summary");
 		ArrayList<String> header = new ArrayList<>();
@@ -165,25 +169,26 @@ public class SummaryReportBuilder {
 		header.add("BrickCount");
 		header.add("% change");
 		rsTable.add(header);
-		for(String rt : IOStringConstants.ROAD_TYPES){
+		for (String rt : IOStringConstants.ROAD_TYPES) {
 			header.add(rt);
 		}
 
 		// loop over each vehicle type
-		final DecimalFormat df= new DecimalFormat("0.0");
-		for (Map.Entry<VehicleType, TreeMap<String, RuleConversionInfo>> entry : detailsByVehicleType.entrySet()) {
+		final DecimalFormat df = new DecimalFormat("0.0");
+		for (Map.Entry<VehicleTypeTimeProfile, TreeMap<String, RuleConversionInfo>> vehicleTypeRules : detailsByVehicleType
+				.entrySet()) {
 			final ArrayList<TableRow> rows = new ArrayList<>();
-			for(RuleConversionInfo rule:entry.getValue().values()){
+			for (RuleConversionInfo rule : vehicleTypeRules.getValue().values()) {
 				TableRow row = new TableRow();
-				row.vehicle = entry.getKey();
+				row.vehicle = vehicleTypeRules.getKey();
 				row.rule = rule;
-				
-				row.meanPCChange="n/a";
-				if(dependencies.isDefaultSpeedsKnown(row.vehicle.getGraphhopperName())){
+
+				row.meanPCChange = "n/a";
+				if (dependencies.isDefaultSpeedsKnown(row.vehicle)) {
 					DoubleSummaryStatistics statistics = new DoubleSummaryStatistics();
-					for(String ht : IOStringConstants.ROAD_TYPES){
-						double originalSpeed = dependencies.speedKmPerHour(row.vehicle.getGraphhopperName(), ht);
-						double newSpeed= rule.getParentCollapsedRule().applyRule(ht, originalSpeed, true);
+					for (String ht : IOStringConstants.ROAD_TYPES) {
+						double originalSpeed = dependencies.speedKmPerHour(row.vehicle, ht);
+						double newSpeed = rule.getParentCollapsedRule().applyRule(ht, originalSpeed, true);
 						statistics.accept(ExcelShp2GeoJSONConverter.percentageChange(originalSpeed, newSpeed));
 					}
 					row.meanPCChange = df.format(statistics.getAverage());
@@ -191,7 +196,7 @@ public class SummaryReportBuilder {
 				}
 				rows.add(row);
 			}
-			
+
 			Collections.sort(rows, new Comparator<TableRow>() {
 
 				@Override
@@ -199,51 +204,51 @@ public class SummaryReportBuilder {
 					return Integer.compare(o1.nbBricks(), o2.nbBricks());
 				}
 			});
-			
-			// build raw string table
-			for(TableRow row:rows){
-				ArrayList<String>rsRow = new ArrayList<>();
+
+			// add rows to the raw string table
+			for (TableRow row : rows) {
+				ArrayList<String> rsRow = new ArrayList<>();
 				rsTable.add(rsRow);
 				SpeedRule rule = row.rule.getParentCollapsedRule();
-				rsRow.add( row.vehicle.getGraphhopperName());
+				rsRow.add(row.vehicle.getCombinedId());
 				rsRow.add(rule.getId());
 				rsRow.add(Integer.toString(row.nbBricks()));
-				rsRow.add( row.meanPCChange);
-				for(String highwayType : IOStringConstants.ROAD_TYPES){
-					if(dependencies.isDefaultSpeedsKnown(row.vehicle.getGraphhopperName())){
-						double originalSpeed = dependencies.speedKmPerHour(row.vehicle.getGraphhopperName(), highwayType);
-						double newSpeed= rule.applyRule(highwayType, originalSpeed, true);
+				rsRow.add(row.meanPCChange);
+				for (String highwayType : IOStringConstants.ROAD_TYPES) {
+					if (dependencies.isDefaultSpeedsKnown(row.vehicle)) {
+						double originalSpeed = dependencies.speedKmPerHour(row.vehicle, highwayType);
+						double newSpeed = rule.applyRule(highwayType, originalSpeed, true);
 						rsRow.add(df.format(unit.convertKMToMe(newSpeed)));
-					}else{
+					} else {
 						rsRow.add("n/a");
-					}	
+					}
 				}
 
 			}
-			
+
 			// add row(s) showing the default values
-			for(VehicleType vehicleType : detailsByVehicleType.keySet()){
-				if(dependencies.isDefaultSpeedsKnown(vehicleType.getGraphhopperName())){
-					ArrayList<String>rsRow = new ArrayList<>();
-					rsTable.add(rsRow);
-					rsRow.add(vehicleType.getGraphhopperName());
-					rsRow.add(AppConstants.DEFAULT_SPEEDS_DISPLAY_NAME);
-					rsRow.add(AppConstants.NA);
-					rsRow.add(AppConstants.NA);
-					for(String highwayType : IOStringConstants.ROAD_TYPES){
-						double originalSpeed = dependencies.speedKmPerHour(vehicleType.getGraphhopperName(), highwayType);
-						rsRow.add(df.format(unit.convertKMToMe(originalSpeed)));	
-					}
+			// for (VehicleTypeTimeProfile vehicleType : detailsByVehicleType.keySet()) {
+			VehicleTypeTimeProfile vehicleType = vehicleTypeRules.getKey();
+			if (dependencies.isDefaultSpeedsKnown(vehicleType)) {
+				ArrayList<String> rsRow = new ArrayList<>();
+				rsTable.add(rsRow);
+				rsRow.add(vehicleType.getCombinedId());
+				rsRow.add(AppConstants.DEFAULT_SPEEDS_DISPLAY_NAME);
+				rsRow.add(AppConstants.NA);
+				rsRow.add(AppConstants.NA);
+				for (String highwayType : IOStringConstants.ROAD_TYPES) {
+					double originalSpeed = dependencies.speedKmPerHour(vehicleType, highwayType);
+					rsRow.add(df.format(unit.convertKMToMe(originalSpeed)));
 				}
 			}
-			
+			// }
+
 		}
 
 		JScrollPane table = RawStringTable.toJTable(rsTable,
-				"By vehicle and rule, bricks count, mean % change and default speed in " +unit.getShorthand()+ "/hr");
+				"By vehicle and rule, bricks count, mean % change and default speed in " + unit.getShorthand() + "/hr");
 		return table;
 	}
-	
 
 	private void collateForRule(RuleConversionInfo info, TreeMap<CollationRec, CollationRec> recs) {
 		for (double percentage : info.getPercentageSpeedChangeByRoadType().values()) {
@@ -259,13 +264,15 @@ public class SummaryReportBuilder {
 			}
 
 			rec.brickIds.addAll(info.getParentCollapsedRule().getMatchRule().getRegionTypes());
-		//	rec.highwayTypes.a
+			// rec.highwayTypes.a
 		}
 	}
 
-	private void addCollatedToStringBuilder(String prefix,TreeMap<CollationRec, CollationRec> recs, StringBuilder builder) {
+	private void addCollatedToStringBuilder(String prefix, TreeMap<CollationRec, CollationRec> recs,
+			StringBuilder builder) {
 		for (CollationRec rec : recs.keySet()) {
-			builder.append(prefix+ "changed by " + rec.low + "% to " + rec.high + "% for " + rec.brickIds.size() + " brick(s), e.g. ");
+			builder.append(prefix + "changed by " + rec.low + "% to " + rec.high + "% for " + rec.brickIds.size()
+					+ " brick(s), e.g. ");
 			int i = 0;
 
 			// randomly select example bricks (better than showing the first alphabetical few)

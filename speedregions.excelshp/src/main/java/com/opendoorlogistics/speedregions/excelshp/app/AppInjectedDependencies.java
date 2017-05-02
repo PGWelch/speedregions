@@ -15,9 +15,9 @@ import com.vividsolutions.jts.geom.LineString;
  *
  */
 public interface AppInjectedDependencies {
-	boolean isDefaultSpeedsKnown(String flagEncoderType);
-	double speedKmPerHour(String flagEncoderType, String highwayType);
-	TreeMap<String, Double> speedKmPerHour(String flagEncoderType);
+	boolean isDefaultSpeedsKnown(VehicleTypeTimeProfile flagEncoderType);
+	double speedKmPerHour(VehicleTypeTimeProfile flagEncoderType, String highwayType);
+	TreeMap<String, Double> speedKmPerHour(VehicleTypeTimeProfile flagEncoderType);
 	void buildGraph(AppSettings settings, UncompiledSpeedRulesFile uncompiledSpeedRulesFile,
 			BuiltTreeListener builtTreeCB,ProcessedWayListener handledWayCB);
 	
@@ -32,6 +32,6 @@ public interface AppInjectedDependencies {
 	}
 	
 	public static interface ProcessedWayListener{
-		void onProcessedWay(String vehicleType,LineString lineString, String regionId,String highwayType,double lengthMetres,SpeedRule rule, double originalSpeedKPH, double speedRegionsSpeedKPH);
+		void onProcessedWay(VehicleTypeTimeProfile vehicleType,LineString lineString, String regionId,String highwayType,double lengthMetres,SpeedRule rule, double originalSpeedKPH, double speedRegionsSpeedKPH);
 	}
 }

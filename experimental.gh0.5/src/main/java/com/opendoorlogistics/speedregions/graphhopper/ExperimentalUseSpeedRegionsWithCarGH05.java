@@ -11,6 +11,8 @@ import com.graphhopper.util.CmdArgs;
 import com.graphhopper.util.PMap;
 import com.opendoorlogistics.speedregions.SpeedRegionLookup;
 import com.opendoorlogistics.speedregions.SpeedRegionLookupBuilder;
+import com.opendoorlogistics.speedregions.excelshp.app.VehicleType;
+import com.opendoorlogistics.speedregions.excelshp.app.VehicleTypeTimeProfile;
 
 /**
  * A temporary hack to use speed regions with graphhopper 0.5.
@@ -72,7 +74,7 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 				encoder = encoder.split("\\|")[0];
 			}
 			PMap configuration = new PMap(propertiesString);
-			encoders.add(factory.createEncoder(encoder, configuration, speedRegionLookup, null));
+			encoders.add(factory.createEncoder(new VehicleTypeTimeProfile(VehicleType.fromGraphhopperName(encoder), null), configuration, speedRegionLookup, null));
 		
 		}
 		

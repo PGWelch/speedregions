@@ -1,5 +1,7 @@
 package com.opendoorlogistics.speedregions.excelshp.app;
 
+import com.opendoorlogistics.speedregions.utils.TextUtils;
+
 public enum VehicleType {
 	CAR("car",true),
 	MOTORCYCLE("motorcycle",true),
@@ -23,5 +25,12 @@ public enum VehicleType {
 		return speedRegionsSupported;
 	}
 
-	
+	public static VehicleType fromGraphhopperName(String graphhoppername){
+		for(VehicleType vt:values()){
+			if(TextUtils.equalsStd(vt.getGraphhopperName(), graphhoppername)){
+				return vt;
+			}
+		}
+		return null;
+	}
 }

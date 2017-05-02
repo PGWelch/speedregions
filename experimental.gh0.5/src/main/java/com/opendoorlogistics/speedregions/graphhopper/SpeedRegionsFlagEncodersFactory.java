@@ -21,6 +21,7 @@ import com.opendoorlogistics.speedregions.SpeedRegionLookup.SpeedRuleLookup;
 import com.opendoorlogistics.speedregions.beans.SpeedRule;
 import com.opendoorlogistics.speedregions.excelshp.app.AppInjectedDependencies.ProcessedWayListener;
 import com.opendoorlogistics.speedregions.excelshp.app.VehicleType;
+import com.opendoorlogistics.speedregions.excelshp.app.VehicleTypeTimeProfile;
 import com.opendoorlogistics.speedregions.utils.GeomUtils;
 import com.opendoorlogistics.speedregions.utils.TextUtils;
 import com.vividsolutions.jts.geom.Coordinate;
@@ -36,26 +37,27 @@ class SpeedRegionsFlagEncodersFactory {
 		this.bytesForFlags = bytesForFlags;
 	}
 
-	AbstractFlagEncoder createCar(PMap config, final SpeedRegionLookup lookup, ProcessedWayListener cb) {
-		MyCarFlagEncoder ret = new MyCarFlagEncoder(config, lookup, cb);
+	AbstractFlagEncoder createCar(VehicleTypeTimeProfile vttp,PMap config, final SpeedRegionLookup lookup, ProcessedWayListener cb) {
+		MyCarFlagEncoder ret = new MyCarFlagEncoder(vttp,config, lookup, cb);
 		originalEncoders.add(ret.helper.noSpeedRegionsFlagEncoder);
 		return ret;
 	}
 
-	AbstractFlagEncoder createMotorcycle(PMap config, final SpeedRegionLookup lookup, ProcessedWayListener cb) {
-		MyMotorcycleFlagEncoder ret = new MyMotorcycleFlagEncoder(config, lookup, cb);
+	AbstractFlagEncoder createMotorcycle(VehicleTypeTimeProfile vttp,PMap config, final SpeedRegionLookup lookup, ProcessedWayListener cb) {
+		MyMotorcycleFlagEncoder ret = new MyMotorcycleFlagEncoder(vttp,config, lookup, cb);
 		originalEncoders.add(ret.helper.noSpeedRegionsFlagEncoder);
 		return ret;
 	}
 
-	AbstractFlagEncoder createEncoder(String type, PMap config, final SpeedRegionLookup lookup, ProcessedWayListener cb) {
-		if (TextUtils.equalsStd(type, EncodingManager.CAR)) {
-			return createCar(config, lookup, cb);
-		} else if (TextUtils.equalsStd(type, EncodingManager.MOTORCYCLE)) {
-			return createMotorcycle(config, lookup, cb);
-		} else if (TextUtils.equalsStd(type, EncodingManager.BIKE)) {
+	AbstractFlagEncoder createEncoder(VehicleTypeTimeProfile type, PMap config, final SpeedRegionLookup lookup, ProcessedWayListener cb) {
+		String gname = type.getVehicleType().getGraphhopperName();
+		if (TextUtils.equalsStd(gname, EncodingManager.CAR)) {
+			return createCar(type,config, lookup, cb);
+		} else if (TextUtils.equalsStd(gname, EncodingManager.MOTORCYCLE)) {
+			return createMotorcycle(type,config, lookup, cb);
+		} else if (TextUtils.equalsStd(gname, EncodingManager.BIKE)) {
 			return new BikeFlagEncoder();
-		} else if (TextUtils.equalsStd(type, EncodingManager.FOOT)) {
+		} else if (TextUtils.equalsStd(gname, EncodingManager.FOOT)) {
 			return new FootFlagEncoder();
 		}
 		throw new UnsupportedOperationException("Unsupported encoder type: " + type);
@@ -76,7 +78,7 @@ class SpeedRegionsFlagEncodersFactory {
 		final TreeMap<String, TreeMap<String, Double>> defaultSpeeds = new TreeMap<>();
 		for (String type : new String[] { EncodingManager.CAR, EncodingManager.MOTORCYCLE }) {
 			TreeMap<String, Double> mapForType = new TreeMap<>();
-			for (Map.Entry<String, Integer> entry : ((HasDefaultSpeeds) createEncoder(type, new PMap(), null, null)).getDefaultSpeeds()
+			for (Map.Entry<String, Integer> entry : ((HasDefaultSpeeds) createEncoder(new VehicleTypeTimeProfile(VehicleType.fromGraphhopperName(type), null), new PMap(), null, null)).getDefaultSpeeds()
 					.entrySet()) {
 				mapForType.put(entry.getKey(), entry.getValue().doubleValue());
 			}
@@ -97,12 +99,12 @@ class SpeedRegionsFlagEncodersFactory {
 		final private AbstractFlagEncoder speedRegionsFlagEncoder;
 		final AbstractFlagEncoder noSpeedRegionsFlagEncoder;
 		final private ProcessedWayListener processedWayListener;
-		final private String encoderType;
+		final private VehicleTypeTimeProfile encoderType;
 
-		FlagEncoderHelper(final SpeedRegionLookup lookup, String encoderType, AbstractFlagEncoder speedRegionsFlagEncoder,
+		FlagEncoderHelper(final SpeedRegionLookup lookup, VehicleTypeTimeProfile encoderType, AbstractFlagEncoder speedRegionsFlagEncoder,
 				AbstractFlagEncoder originalCarFlagEncoder, ProcessedWayListener processedWayListener) {
 			this.lookup = lookup;
-			this.rules = lookup != null ? lookup.createLookupForEncoder(encoderType) : null;
+			this.rules = lookup != null ? lookup.createLookupForEncoder(encoderType.getCombinedId()) : null;
 			this.processedWayListener = processedWayListener;
 			this.encoderType = encoderType;
 			this.speedRegionsFlagEncoder = speedRegionsFlagEncoder;
@@ -204,6 +206,13 @@ class SpeedRegionsFlagEncodersFactory {
 			// max speed already handled in getSpeed...
 			return speed;
 		}
+		
+		/*
+		 * The flag encoder toString() method in graphhopper defines the filenames...
+		 */
+		String getToStringForGraphhopper(){
+			return encoderType.getCombinedId();
+		}
 
 	}
 
@@ -214,9 +223,9 @@ class SpeedRegionsFlagEncodersFactory {
 	private static class MyCarFlagEncoder extends CarFlagEncoder implements HasDefaultSpeeds {
 		final FlagEncoderHelper helper;
 
-		MyCarFlagEncoder(PMap config, final SpeedRegionLookup lookup, ProcessedWayListener cb) {
+		MyCarFlagEncoder(VehicleTypeTimeProfile vttp,PMap config, final SpeedRegionLookup lookup, ProcessedWayListener cb) {
 			super(config);
-			helper = new FlagEncoderHelper(lookup, EncodingManager.CAR, this, new CarFlagEncoder(new PMap()), cb);
+			helper = new FlagEncoderHelper(lookup, vttp, this, new CarFlagEncoder(new PMap()), cb);
 		}
 
 		@Override
@@ -244,6 +253,11 @@ class SpeedRegionsFlagEncodersFactory {
 		@Override
 		protected double applyMaxSpeed(OSMWay way, double speed, boolean force) {
 			return helper.applyMaxSpeedCB(way, speed, force);
+		}
+		
+		@Override
+		public String toString(){
+			return helper.getToStringForGraphhopper();
 		}
 
 	}
@@ -251,9 +265,9 @@ class SpeedRegionsFlagEncodersFactory {
 	private static class MyMotorcycleFlagEncoder extends MotorcycleFlagEncoder implements HasDefaultSpeeds {
 		final FlagEncoderHelper helper;
 
-		MyMotorcycleFlagEncoder(PMap config, final SpeedRegionLookup lookup, ProcessedWayListener cb) {
+		MyMotorcycleFlagEncoder(VehicleTypeTimeProfile vttp,PMap config, final SpeedRegionLookup lookup, ProcessedWayListener cb) {
 			super(config);
-			helper = new FlagEncoderHelper(lookup, EncodingManager.MOTORCYCLE, this, new MotorcycleFlagEncoder(new PMap()), cb);
+			helper = new FlagEncoderHelper(lookup,vttp, this, new MotorcycleFlagEncoder(new PMap()), cb);
 		}
 
 		@Override
@@ -284,6 +298,10 @@ class SpeedRegionsFlagEncodersFactory {
 
 		}
 
+		@Override
+		public String toString(){
+			return helper.getToStringForGraphhopper();
+		}
 	}
 
 }
