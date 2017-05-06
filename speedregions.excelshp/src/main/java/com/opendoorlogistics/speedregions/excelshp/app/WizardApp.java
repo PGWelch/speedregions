@@ -153,8 +153,8 @@ public class WizardApp {
 		}
 
 		if (unsupportedExcelShp.length() > 0) {
-			showWarning(
-					"Excel + shapefile speed regions are not supported for " + unsupportedExcelShp.toString() + " and will not be used");
+			showWarning("Excel + shapefile speed regions are not supported for " + unsupportedExcelShp.toString()
+					+ " and will not be used");
 		}
 
 		// Ensure output dir exists etc and quit if there's a problem
@@ -173,13 +173,12 @@ public class WizardApp {
 		long maxMemoryBytes = Runtime.getRuntime().maxMemory();
 		double estmRequiredBytes = inputFile.length() * AppConstants.AVAILABLE_MEMORY_WARNING_TOLERANCE;
 		if (maxMemoryBytes < estmRequiredBytes) {
-			if (SwingUtils.showConfirmOnEDT(null,
-					"We estimate the input file will need " + toIntRoundMBStr(estmRequiredBytes)
-							+ " MB to process but this program only has " + toIntRoundMBStr(maxMemoryBytes) + " MB available."
-							+ System.lineSeparator()
-							+ "You are advised to increase the Xmx setting in the .bat file (on Windows computers) to give this program more memory, if your computer has it."
-							+ System.lineSeparator() + "Stop this program, change the .bat file and then re-run the program."
-							+ System.lineSeparator() + System.lineSeparator() + "Do you want to stop this program?",
+			if (SwingUtils.showConfirmOnEDT(null, "We estimate the input file will need "
+					+ toIntRoundMBStr(estmRequiredBytes) + " MB to process but this program only has "
+					+ toIntRoundMBStr(maxMemoryBytes) + " MB available." + System.lineSeparator()
+					+ "You are advised to increase the Xmx setting in the .bat file (on Windows computers) to give this program more memory, if your computer has it."
+					+ System.lineSeparator() + "Stop this program, change the .bat file and then re-run the program."
+					+ System.lineSeparator() + System.lineSeparator() + "Do you want to stop this program?",
 					"Low memory warning", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
 				return;
 			}
@@ -193,14 +192,14 @@ public class WizardApp {
 		if (settings.isUseExcelShape()) {
 			if (settings.getGridCellMetres() < AppConstants.MIN_GRID_METRES
 					|| settings.getGridCellMetres() > AppConstants.MAX_GRID_METRES) {
-				showError("The lookup grid cell must be between " + AppConstants.MIN_GRID_METRES + " and " + AppConstants.MAX_GRID_METRES
-						+ " metres.");
+				showError("The lookup grid cell must be between " + AppConstants.MIN_GRID_METRES + " and "
+						+ AppConstants.MAX_GRID_METRES + " metres.");
 				return;
 			}
 
 			try {
-				result = new ExcelShp2GeoJSONConverter(settings, dependencies).convert(new File(settings.getExcelfile()), shapefile,
-						settings.getIdFieldNameInShapefile());
+				result = new ExcelShp2GeoJSONConverter(settings, dependencies)
+						.convert(new File(settings.getExcelfile()), shapefile, settings.getIdFieldNameInShapefile());
 
 				// show summary report if using excel / shape...
 				if (!new SummaryReportBuilder(dependencies, unit).showSummaryReport(result)) {
@@ -216,18 +215,19 @@ public class WizardApp {
 
 		// build uncompiled, which is fed into the graph builder
 		UncompiledSpeedRulesFile uncompiled = null;
-		try {
-			if (settings.isMergeRegionsBeforeBuild()) {
-				uncompiled = createUncompiledMergedByRuleId(result);
-			}else{
-				uncompiled = createUncompiledUsingBrickIdLookup(result);
+		if (settings.isUseExcelShape()) {
+			try {
+				if (settings.isMergeRegionsBeforeBuild()) {
+					uncompiled = createUncompiledMergedByRuleId(result);
+				} else {
+					uncompiled = createUncompiledUsingBrickIdLookup(result);
 
-			}	
-		} catch (Exception e) {
-			showError(e);
-			return;
+				}
+			} catch (Exception e) {
+				showError(e);
+				return;
+			}
 		}
-
 
 		// init detailed report builder
 		final TreeMap<VehicleTypeTimeProfile, DetailedReportBuilder> detailedReportBuilders = new TreeMap<>();
@@ -242,22 +242,24 @@ public class WizardApp {
 				public void onBuiltTree(SpeedRegionLookup t) {
 					// remember that regiontype is brick id in the tree
 					if (finalConversionResult != null) {
-						exportTreeToShapefiles(outdir, t, settings,finalConversionResult);
+						exportTreeToShapefiles(outdir, t, settings, finalConversionResult);
 					}
 				}
 			}, new ProcessedWayListener() {
 
 				@Override
-				public void onProcessedWay(VehicleTypeTimeProfile  vehicleType, LineString lineString, String regionId, String highwayType,
-						double lengthMetres, SpeedRule rule, double originalSpeedKPH, double speedRegionsSpeedKPH) {
+				public void onProcessedWay(VehicleTypeTimeProfile vehicleType, LineString lineString, String regionId,
+						String highwayType, double lengthMetres, SpeedRule rule, double originalSpeedKPH,
+						double speedRegionsSpeedKPH) {
 
-					
 					DetailedReportBuilder builder = detailedReportBuilders.get(vehicleType);
 					if (builder == null) {
-						builder = new DetailedReportBuilder(unit, dependencies.speedKmPerHour(vehicleType), !settings.isMergeRegionsBeforeBuild());
+						builder = new DetailedReportBuilder(unit, dependencies.speedKmPerHour(vehicleType),
+								!settings.isMergeRegionsBeforeBuild());
 						detailedReportBuilders.put(vehicleType, builder);
 					}
-					builder.onProcessedWay(lineString, regionId, highwayType, lengthMetres, rule, originalSpeedKPH, speedRegionsSpeedKPH);
+					builder.onProcessedWay(lineString, regionId, highwayType, lengthMetres, rule, originalSpeedKPH,
+							speedRegionsSpeedKPH);
 				}
 
 			});
@@ -265,7 +267,8 @@ public class WizardApp {
 			// Build reports and output to text and Excel file
 			final ArrayList<RawStringTable> allReports = new ArrayList<>();
 			final RawStringTable[] defaultReport = new RawStringTable[1];
-			for (Map.Entry<VehicleTypeTimeProfile, DetailedReportBuilder> reportBuilder : detailedReportBuilders.entrySet()) {
+			for (Map.Entry<VehicleTypeTimeProfile, DetailedReportBuilder> reportBuilder : detailedReportBuilders
+					.entrySet()) {
 				List<RawStringTable> reports = reportBuilder.getValue().buildReports(defaultReport);
 
 				// export to excel
@@ -307,7 +310,6 @@ public class WizardApp {
 				}
 			});
 
-
 		} catch (Exception e) {
 			showError(e);
 		}
@@ -315,9 +317,10 @@ public class WizardApp {
 	}
 
 	private UncompiledSpeedRulesFile createUncompiledUsingBrickIdLookup(ConversionResult result) {
-		UncompiledSpeedRulesFile uncompiled= new UncompiledSpeedRulesFile();
+		UncompiledSpeedRulesFile uncompiled = new UncompiledSpeedRulesFile();
 		int nVehicleTypes = result.rules.size();
-		for (Map.Entry<VehicleTypeTimeProfile, TreeMap<String, RuleConversionInfo>> vehicleType : result.rules.entrySet()) {
+		for (Map.Entry<VehicleTypeTimeProfile, TreeMap<String, RuleConversionInfo>> vehicleType : result.rules
+				.entrySet()) {
 
 			// rules will already be marked as belonging to the correct encoder
 			for (RuleConversionInfo rci : vehicleType.getValue().values()) {
@@ -334,54 +337,56 @@ public class WizardApp {
 		return uncompiled;
 	}
 
-	private UncompiledSpeedRulesFile createUncompiledMergedByRuleId(ConversionResult result){
+	private UncompiledSpeedRulesFile createUncompiledMergedByRuleId(ConversionResult result) {
 
 		// collate by region id
 		GeometryFactory factory = GeomUtils.newGeomFactory();
 		TreeMap<String, LinkedList<MultiPolygon>> byRegionType = new TreeMap<>();
-		for(BrickItem item :result.bricks){
+		for (BrickItem item : result.bricks) {
 			String regionType = item.speedProfileId;
 			LinkedList<MultiPolygon> list = byRegionType.get(regionType);
-			if(list==null){
+			if (list == null) {
 				list = new LinkedList<>();
 				byRegionType.put(regionType, list);
 			}
 			Geometry geometry = result.shp.get(item.brickId);
 			list.add(GeomUtils.toJTSMultiPolygon(geometry, factory));
 		}
-		
+
 		// create the geojson with the merged polygons
 		UncompiledSpeedRulesFile uncompiled = new UncompiledSpeedRulesFile();
-		for(Map.Entry<String, LinkedList<MultiPolygon>> entry:byRegionType.entrySet()){
-			LOGGER.info("Unioning all " +entry.getValue().size() + " multipolygons for speed profile id " + entry.getKey());
-		
+		for (Map.Entry<String, LinkedList<MultiPolygon>> entry : byRegionType.entrySet()) {
+			LOGGER.info("Unioning all " + entry.getValue().size() + " multipolygons for speed profile id "
+					+ entry.getKey());
+
 			// try cleaning polygons... simplified bricks (via simplifaction in R) can create issues
 			// when we union in JTS
 			ArrayList<Polygon> cleaned = new ArrayList<>();
-			for(MultiPolygon g : entry.getValue()){
+			for (MultiPolygon g : entry.getValue()) {
 				int n = g.getNumGeometries();
-				for(int i=0;i<n;i++){
-					Polygon p = (Polygon)g.getGeometryN(i);
+				for (int i = 0; i < n; i++) {
+					Polygon p = (Polygon) g.getGeometryN(i);
 					MultiPolygon cleanedMP = GeomUtils.cleanPolygon(p, factory);
 					cleaned.addAll(GeomUtils.getPolygons(cleanedMP));
 				}
 			}
-			
+
 			Geometry unioned = CascadedPolygonUnion.union(cleaned);
 			MultiPolygon mp = GeomUtils.toJTSMultiPolygon(unioned, factory);
 
 			// Add feature
 			Feature feature = new Feature();
-			feature.setProperty(SpeedRegionConsts.REGION_TYPE_KEY,entry.getKey());
+			feature.setProperty(SpeedRegionConsts.REGION_TYPE_KEY, entry.getKey());
 			LOGGER.info("Creating geoJSON for speed profile id  " + entry.getKey());
 			GeoJsonObject geoJson = GeomUtils.toGeoJSON(mp);
-			feature.setGeometry(geoJson);	
+			feature.setGeometry(geoJson);
 			uncompiled.getGeoJson().getFeatures().add(feature);
 
 		}
-		
+
 		// finalise the rules
-		for (Map.Entry<VehicleTypeTimeProfile, TreeMap<String, RuleConversionInfo>> vehicleType : result.rules.entrySet()) {
+		for (Map.Entry<VehicleTypeTimeProfile, TreeMap<String, RuleConversionInfo>> vehicleType : result.rules
+				.entrySet()) {
 
 			// rules will already be marked as belonging to the correct encoder
 			for (RuleConversionInfo rci : vehicleType.getValue().values()) {
@@ -389,20 +394,20 @@ public class WizardApp {
 
 				// prefix the vehicle type to the rule id to ensure global uniqueness
 				String originalId = rule.getId();
-				rule.setId(vehicleType.getKey().getCombinedId()+ "-" + rule.getId());
-				
+				rule.setId(vehicleType.getKey().getCombinedId() + "-" + rule.getId());
+
 				// as we've already merged by profile id / rule id, add a match rule for the original rule id
 				rule.getMatchRule().getRegionTypes().clear();
 				rule.getMatchRule().getRegionTypes().add(originalId);
-				
+
 				uncompiled.getRules().add(rule);
 			}
 
 		}
-		
+
 		return uncompiled;
 	}
-	
+
 	private void showError(Exception e) {
 		String msg = ExceptionUtils.getMessage(e);
 		showError("An error occurred when processing." + System.lineSeparator() + (msg != null ? msg : ""));
@@ -432,8 +437,8 @@ public class WizardApp {
 			if (count > 0) {
 				if (SwingUtils.showConfirmOnEDT(null,
 						"The output directory " + dirname + " is not empty." + System.lineSeparator()
-								+ "You must delete all files from the directory before continuing." + System.lineSeparator()
-								+ "Do you want to delete all files from it?",
+								+ "You must delete all files from the directory before continuing."
+								+ System.lineSeparator() + "Do you want to delete all files from it?",
 						"Delete files in dir", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
 
 					for (File file : dir.listFiles()) {
@@ -495,7 +500,7 @@ public class WizardApp {
 			// export by raw brick id
 			exportNodesShapefile(collateTree(lookup, null), "BrickId", new File(outdir, "NodedBricks.shp"));
 
-			// then by rule id 
+			// then by rule id
 			final TreeMap<String, String> brickId2GeographicType = new TreeMap<>();
 			for (BrickItem item : conversionResult.bricks) {
 				brickId2GeographicType.put(item.brickId, TextUtils.stdString(item.speedProfileId));
@@ -508,13 +513,11 @@ public class WizardApp {
 					return brickId2GeographicType.get(key);
 				}
 			}), "RuleId", new File(outdir, "NodedGeographicTypes.shp"));
-		}
-		else{
-			
-			// Tree region type will already be the rule id...
-			exportNodesShapefile(collateTree(lookup,null), "RuleId", new File(outdir, "NodedGeographicTypes.shp"));
-		}
+		} else {
 
+			// Tree region type will already be the rule id...
+			exportNodesShapefile(collateTree(lookup, null), "RuleId", new File(outdir, "NodedGeographicTypes.shp"));
+		}
 
 	}
 
@@ -531,10 +534,10 @@ public class WizardApp {
 
 					// apply collator if we have one
 					String collateKey = rn.getRegionType();
-					if(keyCollator!=null){
+					if (keyCollator != null) {
 						collateKey = keyCollator.apply(collateKey);
 					}
-					//String collateKey = keyCollator!=null? keyCollator.apply(rn.getRegionType()): rn.getRegionType();
+					// String collateKey = keyCollator!=null? keyCollator.apply(rn.getRegionType()): rn.getRegionType();
 
 					if (collateKey != null) {
 						LinkedList<RegionsSpatialTreeNode> list = collated.get(collateKey);
@@ -551,9 +554,11 @@ public class WizardApp {
 		return collated;
 	}
 
-	private void exportNodesShapefile(final TreeMap<String, LinkedList<RegionsSpatialTreeNode>> collated, String idFieldName, File file) {
-		SimpleFeatureType brickNodesType = ShapefileIO.createWGS84FeatureTypeBuilder("UnionedBrickNodes", Geometries.MULTIPOLYGON)
-				.addStr(idFieldName).addLong("NodesCount").buildFeatureType();
+	private void exportNodesShapefile(final TreeMap<String, LinkedList<RegionsSpatialTreeNode>> collated,
+			String idFieldName, File file) {
+		SimpleFeatureType brickNodesType = ShapefileIO
+				.createWGS84FeatureTypeBuilder("UnionedBrickNodes", Geometries.MULTIPOLYGON).addStr(idFieldName)
+				.addLong("NodesCount").buildFeatureType();
 
 		// stuff to reduce precision to help prevent slivers etc
 		PrecisionModel pm = new PrecisionModel(PrecisionModel.FLOATING_SINGLE);

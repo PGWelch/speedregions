@@ -100,14 +100,17 @@ public class RunWizardApp {
 	private void buildGraph(final CmdArgs mergedArgs, AppSettings settings,
 			UncompiledSpeedRulesFile uncompiledSpeedRulesFile, BuiltTreeListener builtTreeCB,
 			final ProcessedWayListener handledWayCB) {
-		LOGGER.info("Compiling speed regions lookup");
-		ProcessTimer lookupTime = new ProcessTimer().start();
-		SpeedRegionLookup speedRegionLookup = SpeedRegionLookupBuilder
-				.loadFromUncompiledSpeedRulesFile(uncompiledSpeedRulesFile, settings.getGridCellMetres());
-		LOGGER.info("Speed region lookup took " + lookupTime.stop().secondsDuration() + " seconds to build");
+		SpeedRegionLookup speedRegionLookup =null;
+		if(settings.isUseExcelShape()){
+			LOGGER.info("Compiling speed regions lookup");
+			ProcessTimer lookupTime = new ProcessTimer().start();
+			speedRegionLookup = SpeedRegionLookupBuilder
+					.loadFromUncompiledSpeedRulesFile(uncompiledSpeedRulesFile, settings.getGridCellMetres());
+			LOGGER.info("Speed region lookup took " + lookupTime.stop().secondsDuration() + " seconds to build");
 
-		if (builtTreeCB != null) {
-			builtTreeCB.onBuiltTree(speedRegionLookup);
+			if (builtTreeCB != null) {
+				builtTreeCB.onBuiltTree(speedRegionLookup);
+			}			
 		}
 
 		// Create graphhopper object.
@@ -119,9 +122,11 @@ public class RunWizardApp {
 		// Get enabled vehicles  and time profileid combinations, including default
 		// ones for any enabled vehicle without a speed profiles lookup
 		TreeSet<VehicleTypeTimeProfile> vehicleTypes = new TreeSet<>();
-		for(String combinedId: speedRegionLookup.getEncoderTypes()){
-			VehicleTypeTimeProfile vttp= VehicleTypeTimeProfile.parseCombinedId(combinedId);
-			vehicleTypes.add(vttp);
+		if(speedRegionLookup!=null){
+			for(String combinedId: speedRegionLookup.getEncoderTypes()){
+				VehicleTypeTimeProfile vttp= VehicleTypeTimeProfile.parseCombinedId(combinedId);
+				vehicleTypes.add(vttp);
+			}			
 		}
 		for (VehicleType type : VehicleType.values()) {
 			if (settings.isEnabled(type) ) {
