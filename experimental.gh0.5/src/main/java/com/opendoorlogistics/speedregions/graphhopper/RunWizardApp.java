@@ -161,6 +161,17 @@ public class RunWizardApp {
 		EncodingManager myEncodingManager = new EncodingManager(newSpeedEncoders, bytesForFlags);
 		graphHopper.setEncodingManager(myEncodingManager);
 
+		System.out.println("");
+		System.out.println("############################");
+		System.out.println("");
+		System.out.println("Starting build of graph file, please wait.");
+		System.out.println("For small countries (e.g. Malta) this should take around 10 seconds");
+		System.out.println("For the UK it could take around 5 or 10 minutes.");
+		System.out.println("For the larger countries it will take longer.");		
+		System.out.println("");
+		System.out.println("############################");
+		System.out.println("");
+		
 		LOGGER.info("Building graph");
 		ProcessTimer graphTimer = new ProcessTimer().start();
 		graphHopper.importOrLoad().close();

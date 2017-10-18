@@ -5,7 +5,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class AppSettings {
 	private String pbfFile="";
 	private String outdirectory="";
-	private boolean useExcelShape;
+	/**
+	 * Default excelshp should be false so we get a simplified dialog for odl studio users
+	 */
+	private boolean useExcelShape=false;
 	private String excelfile="";
 	private String shapefile="";
 	private String idFieldNameInShapefile="";

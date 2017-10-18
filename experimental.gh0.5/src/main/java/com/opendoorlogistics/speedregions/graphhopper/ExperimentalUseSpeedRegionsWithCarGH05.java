@@ -29,6 +29,13 @@ public class ExperimentalUseSpeedRegionsWithCarGH05 {
 	 *
 	 */
 	public static void main(String[] strArgs) throws Exception {
+		
+		// print java memory stuff so we can check correct xmx setting
+		
+		System.out.println("Java max memory MB: " + (Runtime.getRuntime().maxMemory()/ (1024.0*1024.0)));
+		System.out.println("Java total memory MB: " + (Runtime.getRuntime().totalMemory()/ (1024.0*1024.0)));
+		System.out.println("Java free memory MB: " + (Runtime.getRuntime().freeMemory()/ (1024.0*1024.0)));
+		
 		CmdArgs args = CmdArgs.read(strArgs);
 		if (args.getBool("odlwizardapp", false)) {
 			new RunWizardApp().runWizardApp(args);

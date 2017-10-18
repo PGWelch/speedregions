@@ -306,7 +306,11 @@ public class WizardApp {
 
 				@Override
 				public void run() {
-					DetailedReportBuilder.showReportsOnEDT(allReports, defaultReport[0]);
+					if(settings.isUseExcelShape()){
+						DetailedReportBuilder.showReportsOnEDT(allReports, defaultReport[0]);						
+					}else{
+						JOptionPane.showMessageDialog(null, "Finished building road network graph");
+					}
 				}
 			});
 
