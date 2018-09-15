@@ -50,3 +50,4 @@ Temporary Items
 com.opendoorlogistics.speedregions.commandline/.settings/org.eclipse.jdt.core.prefs
 *.prefs
 speedregions.excelshp/odlstudio/Template3 - Copy.xlsx
+*.attr
